@@ -1,0 +1,19 @@
+{
+  "name": "tessell-blog-agent-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for generating Tessell blogs from tessell-ui repository.",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch & node --watch dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}
