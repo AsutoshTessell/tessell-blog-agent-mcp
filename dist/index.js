@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createClient } from '@sanity/client';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
@@ -6,20 +7,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
-import https from 'https';
+import { BLOG_POSTS_QUERY } from './blogQueries.js';
+import { loadTessellWebsiteEnv } from './loadEnv.js';
 const execAsync = promisify(exec);
-/** Match tessell-web/tessell-website/sanity/lib/client.tsx */
-const SANITY_API_VERSION = '2024-01-01';
-function getSanityConfig() {
-    const projectId = process.env.SANITY_PROJECT_ID ?? 'krotrzct';
-    const dataset = process.env.SANITY_DATASET || 'staging';
-    return { projectId, dataset };
-}
-/**
- * Same filter + order as tessell-web BLOG_POSTS_QUERY (listing page).
- * Projected fields kept minimal for the MCP tool payload.
- */
-const BLOG_LIST_GROQ = `*[_type == "blogPost" && archived != true && draft != true] | order(featured desc, publishedDate desc) { _id, name, "slug": slug.current, postSummary, publishedDate }`;
+/** Load tessell-website/.env before reading tools (same SANITY_* as Next.js). */
+loadTessellWebsiteEnv();
 const server = new Server({
     name: 'tessell-blog-agent',
     version: '1.0.0',
@@ -51,7 +43,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_published_blogs',
-                description: 'Lists published blog posts from Sanity using the same project/dataset as tessell-web (env: SANITY_PROJECT_ID, SANITY_DATASET default staging) and the same filters as the website blog listing (non-draft, non-archived, perspective published).',
+                description: 'Lists blog posts using the same Sanity query as localhost:3000/blog (BLOG_POSTS_QUERY). Loads `.env` in this repo first (copy from `.env.example`), then optional TESSELL_WEBSITE_* paths, then sibling tessell-web/tessell-website/.env. Uses @sanity/client.',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -74,7 +66,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         draftsFolderPath: {
                             type: 'string',
                             description: 'The absolute path to the drafts folder (e.g. /Users/name/tessell-web/cms/drafts).',
-                        }
+                        },
                     },
                     required: ['title', 'markdownContent', 'draftsFolderPath'],
                 },
@@ -98,47 +90,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
     }
     if (request.params.name === 'get_published_blogs') {
-        const { projectId, dataset } = getSanityConfig();
-        const params = new URLSearchParams({
-            query: BLOG_LIST_GROQ,
-            perspective: 'published',
-        });
-        const url = `https://${projectId}.api.sanity.io/v${SANITY_API_VERSION}/data/query/${dataset}?${params.toString()}`;
-        return new Promise((resolve, reject) => {
-            https
-                .get(url, (res) => {
-                let data = '';
-                res.on('data', (chunk) => (data += chunk));
-                res.on('end', () => {
-                    if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-                        reject(new McpError(ErrorCode.InternalError, `Sanity HTTP ${res.statusCode}: ${data.slice(0, 500)}`));
-                        return;
-                    }
-                    try {
-                        const parsed = JSON.parse(data);
-                        const meta = { sanityProjectId: projectId, sanityDataset: dataset };
-                        resolve({
-                            content: [
-                                {
-                                    type: 'text',
-                                    text: JSON.stringify({ meta, result: parsed.result }, null, 2),
-                                },
-                            ],
-                        });
-                    }
-                    catch (e) {
-                        reject(new McpError(ErrorCode.InternalError, `Failed to parse Sanity response: ${e.message}`));
-                    }
-                });
-            })
-                .on('error', (e) => {
-                reject(new McpError(ErrorCode.InternalError, `Failed to fetch from Sanity: ${e.message}`));
+        try {
+            loadTessellWebsiteEnv();
+            const projectId = process.env.SANITY_PROJECT_ID;
+            if (!projectId) {
+                throw new McpError(ErrorCode.InternalError, 'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.');
+            }
+            const dataset = process.env.SANITY_DATASET || 'staging';
+            const client = createClient({
+                projectId,
+                dataset,
+                apiVersion: '2024-01-01',
+                // Match tessell-website/sanity/lib/client.tsx (dev = Live API, prod = CDN)
+                useCdn: process.env.NODE_ENV === 'production',
+                perspective: 'published',
+                token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
             });
-        });
+            const result = await client.fetch(BLOG_POSTS_QUERY);
+            const meta = {
+                sanityProjectId: projectId,
+                sanityDataset: dataset,
+                resultCount: Array.isArray(result) ? result.length : 0,
+            };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({ meta, result }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            if (e instanceof McpError)
+                throw e;
+            throw new McpError(ErrorCode.InternalError, `Sanity fetch failed: ${e.message}`);
+        }
     }
     if (request.params.name === 'save_blog_draft') {
         const { title, markdownContent, draftsFolderPath } = request.params.arguments;
-        // Create a safe slug for the filename
         const slug = title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')

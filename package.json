@@ -10,7 +10,9 @@
     "dev": "tsc --watch & node --watch dist/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.1"
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "@sanity/client": "^7.21.0",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
