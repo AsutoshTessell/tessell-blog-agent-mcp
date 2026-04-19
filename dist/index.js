@@ -9,6 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { BLOG_POSTS_QUERY } from './blogQueries.js';
 import { loadTessellWebsiteEnv } from './loadEnv.js';
+import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 const execAsync = promisify(exec);
 /** Load tessell-website/.env before reading tools (same SANITY_* as Next.js). */
 loadTessellWebsiteEnv();
@@ -71,6 +72,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     required: ['title', 'markdownContent', 'draftsFolderPath'],
                 },
             },
+            {
+                name: 'markdown_to_sanity_blog',
+                description: 'Converts a Markdown draft (optional YAML frontmatter) into (1) apiReady: blogPost JSON with Portable Text postBody for Sanity mutate/createOrReplace, and (2) studioFriendly: flat strings for copy-paste into Studio. Pass markdownFilePath OR markdown. Images/refs not included.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        markdownFilePath: {
+                            type: 'string',
+                            description: 'Absolute path to a .md file (with frontmatter).',
+                        },
+                        markdown: {
+                            type: 'string',
+                            description: 'Raw Markdown string if not using a file.',
+                        },
+                    },
+                },
+            },
         ],
     };
 });
@@ -125,6 +143,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             if (e instanceof McpError)
                 throw e;
             throw new McpError(ErrorCode.InternalError, `Sanity fetch failed: ${e.message}`);
+        }
+    }
+    if (request.params.name === 'markdown_to_sanity_blog') {
+        const args = (request.params.arguments || {});
+        if (!args.markdown?.trim() && !args.markdownFilePath?.trim()) {
+            throw new McpError(ErrorCode.InvalidParams, 'Provide either markdown (string) or markdownFilePath (absolute path to .md).');
+        }
+        try {
+            const result = await markdownToSanityBlogPayloads({
+                markdown: args.markdown,
+                markdownFilePath: args.markdownFilePath,
+            });
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(result, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            throw new McpError(ErrorCode.InternalError, e.message || String(e));
         }
     }
     if (request.params.name === 'save_blog_draft') {
