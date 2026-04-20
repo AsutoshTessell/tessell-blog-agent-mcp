@@ -10,6 +10,7 @@ import path from 'path';
 import { BLOG_POSTS_QUERY } from './blogQueries.js';
 import { loadTessellWebsiteEnv } from './loadEnv.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
+import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
 const execAsync = promisify(exec);
 /** Load tessell-website/.env before reading tools (same SANITY_* as Next.js). */
 loadTessellWebsiteEnv();
@@ -89,6 +90,35 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     },
                 },
             },
+            {
+                name: 'publish_blog_to_sanity',
+                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Provide exactly one source: markdownFilePath (converts like markdown_to_sanity_blog), sanityPayloadsJsonPath (output from that tool saved as .sanity-payloads.json), or documentJson (stringified apiReady.document). Optional dryRun validates source without calling Sanity.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        markdownFilePath: {
+                            type: 'string',
+                            description: 'Absolute path to a .md draft; document is built from Markdown + frontmatter.',
+                        },
+                        sanityPayloadsJsonPath: {
+                            type: 'string',
+                            description: 'Absolute path to a JSON file containing { apiReady: { document } } (e.g. *.sanity-payloads.json).',
+                        },
+                        documentJson: {
+                            type: 'string',
+                            description: 'Stringified blogPost document (same shape as apiReady.document).',
+                        },
+                        dryRun: {
+                            type: 'boolean',
+                            description: 'If true, resolve the document but do not call Sanity (no token required for resolution only if source parses).',
+                        },
+                        dataset: {
+                            type: 'string',
+                            description: 'Override SANITY_DATASET (default: staging or env).',
+                        },
+                    },
+                },
+            },
         ],
     };
 });
@@ -160,6 +190,36 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     {
                         type: 'text',
                         text: JSON.stringify(result, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            throw new McpError(ErrorCode.InternalError, e.message || String(e));
+        }
+    }
+    if (request.params.name === 'publish_blog_to_sanity') {
+        const args = (request.params.arguments || {});
+        try {
+            loadTessellWebsiteEnv();
+            const document = await resolveBlogPostDocument({
+                markdownFilePath: args.markdownFilePath,
+                sanityPayloadsJsonPath: args.sanityPayloadsJsonPath,
+                documentJson: args.documentJson,
+            });
+            const result = await publishBlogPostToSanity(document, {
+                dryRun: Boolean(args.dryRun),
+                dataset: args.dataset?.trim() || undefined,
+            });
+            const payload = {
+                ...result,
+                reminder: 'Studio may still need blogCategory, blogTags, authors, and images. Open the document in Sanity Studio after write.',
+            };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(payload, null, 2),
                     },
                 ],
             };

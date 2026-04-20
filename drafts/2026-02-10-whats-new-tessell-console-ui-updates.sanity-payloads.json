@@ -1,0 +1,657 @@
+{
+  "apiReady": {
+    "document": {
+      "_type": "blogPost",
+      "_id": "bac08108-bfec-49d0-8b1b-71e91a2501ac",
+      "name": "What’s new in the Tessell console: GCP, SQL Server DAP, and reliability",
+      "slug": {
+        "_type": "slug",
+        "current": "whats-new-tessell-console-ui-updates-feb-2026"
+      },
+      "postBody": [
+        {
+          "_type": "block",
+          "_key": "929435891971",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "073ef2d1dcbb",
+              "text": "Why this post",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "cca6db8721ce",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "5a57f9bbb970",
+              "text": "We reviewed recent ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "ac6cf6005229",
+              "text": "tessell-ui",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "e78cc9ad2341",
+              "text": " changes (about the last two weeks) and compared them to ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "49fe6bcd5e88",
+              "text": "published",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "aa31e69d7428",
+              "text": " posts on the Tessell blog. The site already covers strategy, compliance, and deep dives on engines; this note focuses on ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "b8c8445260b1",
+              "text": "what changed in the product UI",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "50a8100325ed",
+              "text": " so you can adopt new behavior quickly.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "eb7fe1e7cda0",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b7ddd40c8976",
+              "text": "GCP on Core",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "f53eae41fbd3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "18cec28a95c6",
+              "text": "**Prechecks and feasibility checks** for GCP are adjusted in the UI to match current product behavior.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "c5eca242d7af",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "db5ad1eee5da",
+              "text": "**Clone refresh** is limited on GCP: disabled for engines where it does not apply, with **Oracle on GCP** as the exception where refresh remains relevant.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "42e4e05c33ec",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f308564ddb45",
+              "text": "The **Code** menu no longer offers **Terraform** for GCP where it is not applicable.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "8c4a60f8dd6b",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "26a91bd4e3fc",
+              "text": "**Native backup RPO** policy UI for **GCP Cloud SQL Server** was removed to align with supported capabilities.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "e39e2b317f88",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "59f73b8902f5",
+              "text": "**Access policies** are enabled for **GCP AV machines**, bringing policy controls in line with other environments where supported.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "bede343307f3",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "a781b33ad3f5",
+              "text": "SQL Server: Data Access Policies and clones",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "c49042ee14b4",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ee317f15c005",
+              "text": "The UI **respects PITR (point-in-time recovery) availability**: tabs and toggles adapt when PITR is not available for a scenario.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "f096327a7549",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "820425c9598f",
+              "text": "**Subscription and region** context is handled more consistently when configuring DAP-related options.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "3025962b8b7d",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "3e8371692d8b",
+              "text": "In the **clone** flow, **SQL Server collation** is **pre-filled and locked** where required to avoid invalid combinations.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "7756a1248dab",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "6e7c96eb189a",
+              "text": "Networking and Genie",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "778ef1e84c28",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "c8530475686c",
+              "text": "**Genie** can attach **private and public IP addresses** where supported.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "d1bd5dc17d7e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "1994d394fb5f",
+              "text": "On **Azure**, **private connectivity** can be **turned off** via the toggle when your topology allows it.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "d1f6ba9f5cbf",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "487b91950bf5",
+              "text": "Provisioning, maintenance, and operations",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "f1e4b1799920",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "963178540e6d",
+              "text": "**Provisioning** shows **image status** in the adapter layer so the UI reflects image state more clearly during create flows.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "698996b8f0ae",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "d6d5a4e30f80",
+              "text": "**Instance counts** use correct values instead of hard-coded placeholders where fixed.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "897a934aa7d2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "e32cd8a22bd3",
+              "text": "**Maintenance window**: a crash when the API returns **`maintenanceWindow: null`** is fixed on **DB Service → Settings → Maintenance Window**.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "81b3033b5d47",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "0e1cfbce6373",
+              "text": "Client usage drops **unsupported** API arguments (`maintenance_window`, `server_patching_config`) where the backend no longer accepts them.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "57c2a1b07ef0",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "72cddbca750b",
+              "text": "**Monitoring** received several small bug fixes.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "1eadf27f53df",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b7f83e8f6b1e",
+              "text": "**DR drill**: a **shared feature flag** path supports DR drill flows across supported engines.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "9b7ad5877265",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "7e6b8c23487a",
+              "text": "Developer experience",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "7436a21e43ba",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "e58d28785c55",
+              "text": "**Rsbuild** configuration was added for **Rspack**-based builds, improving local dev and build tooling alignment.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "c911101cc404",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "1457aef2557e",
+              "text": "Governance and tests",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "82e93e67dfac",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b550a516f725",
+              "text": "**IAM governance** and **compute** areas gained **unit tests**; the legacy **addUser** path is marked for removal.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "f9002f0ccf58",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "de82d43193fc",
+              "text": "What wasn’t already covered as a single story",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "65480dcede47",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ae536d89e2fc",
+              "text": "Published posts include ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "4172e95c5b5c",
+              "text": "DAP",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "090334d0cc7f",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "2241d91aba8a",
+              "text": "Oracle on GCP",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "88abc1b716de",
+              "text": ", and ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "b2605ace8220",
+              "text": "SQL Server",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "f2ef1d3a4af4",
+              "text": " topics at a high level, but ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "c2422931cdac",
+              "text": "no one article",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "2dee33f906ae",
+              "text": " ties together this ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "5ae0e44180e4",
+              "text": "exact set",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "075dfd1ba4e3",
+              "text": " of ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "22f7e92c1a6a",
+              "text": "console-level",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "904dd7bcc242",
+              "text": " changes—especially ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "0aa37b2d1a38",
+              "text": "GCP-specific UI alignment",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "353079561a91",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "84ef296d2346",
+              "text": "SQL Server DAP + PITR-aware behavior",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "c01f17f44d94",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "6dcf24fbac91",
+              "text": "Genie IP options",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "d5b99a0bb26b",
+              "text": ", and the ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "396fd2acb9fa",
+              "text": "maintenance window null",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "c8b8410ae898",
+              "text": " fix. This draft fills that gap.",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "postSummary": "Recent UI work improves GCP workflows, SQL Server Data Access Policies with PITR, Genie networking, and day-to-day stability—here’s a concise rundown for practitioners.",
+      "description": "A short release-style summary of notable Tessell console changes from recent development, compared to broader themes already on the blog.",
+      "seo": {
+        "title": "What’s new in the Tessell console — recent UI updates",
+        "metaDescription": "GCP console tweaks, SQL Server DAP and PITR-aware UI, Genie, Azure connectivity, maintenance and provisioning fixes, and build tooling in Tessell."
+      },
+      "publishedDate": "2026-02-10T12:00:00.000Z",
+      "draft": true,
+      "archived": false,
+      "headerFeatured": false,
+      "featured": false
+    },
+    "mutationHint": "POST { \"mutations\": [ { \"createOrReplace\": <apiReady.document> } ] } to https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset> with Authorization: Bearer <SANITY_TOKEN>. Or use @sanity/client createOrReplace."
+  },
+  "studioFriendly": {
+    "blogPostTitle": "What’s new in the Tessell console: GCP, SQL Server DAP, and reliability",
+    "slug": "whats-new-tessell-console-ui-updates-feb-2026",
+    "postSummary": "Recent UI work improves GCP workflows, SQL Server Data Access Policies with PITR, Genie networking, and day-to-day stability—here’s a concise rundown for practitioners.",
+    "description": "A short release-style summary of notable Tessell console changes from recent development, compared to broader themes already on the blog.",
+    "seoTitle": "What’s new in the Tessell console — recent UI updates",
+    "seoMetaDescription": "GCP console tweaks, SQL Server DAP and PITR-aware UI, Genie, Azure connectivity, maintenance and provisioning fixes, and build tooling in Tessell.",
+    "postBody_markdown": "## Why this post\n\nWe reviewed recent **tessell-ui** changes (about the last two weeks) and compared them to **published** posts on the Tessell blog. The site already covers strategy, compliance, and deep dives on engines; this note focuses on **what changed in the product UI** so you can adopt new behavior quickly.\n\n## GCP on Core\n\n- **Prechecks and feasibility checks** for GCP are adjusted in the UI to match current product behavior.\n- **Clone refresh** is limited on GCP: disabled for engines where it does not apply, with **Oracle on GCP** as the exception where refresh remains relevant.\n- The **Code** menu no longer offers **Terraform** for GCP where it is not applicable.\n- **Native backup RPO** policy UI for **GCP Cloud SQL Server** was removed to align with supported capabilities.\n- **Access policies** are enabled for **GCP AV machines**, bringing policy controls in line with other environments where supported.\n\n## SQL Server: Data Access Policies and clones\n\n- The UI **respects PITR (point-in-time recovery) availability**: tabs and toggles adapt when PITR is not available for a scenario.\n- **Subscription and region** context is handled more consistently when configuring DAP-related options.\n- In the **clone** flow, **SQL Server collation** is **pre-filled and locked** where required to avoid invalid combinations.\n\n## Networking and Genie\n\n- **Genie** can attach **private and public IP addresses** where supported.\n- On **Azure**, **private connectivity** can be **turned off** via the toggle when your topology allows it.\n\n## Provisioning, maintenance, and operations\n\n- **Provisioning** shows **image status** in the adapter layer so the UI reflects image state more clearly during create flows.\n- **Instance counts** use correct values instead of hard-coded placeholders where fixed.\n- **Maintenance window**: a crash when the API returns **`maintenanceWindow: null`** is fixed on **DB Service → Settings → Maintenance Window**.\n- Client usage drops **unsupported** API arguments (`maintenance_window`, `server_patching_config`) where the backend no longer accepts them.\n- **Monitoring** received several small bug fixes.\n- **DR drill**: a **shared feature flag** path supports DR drill flows across supported engines.\n\n## Developer experience\n\n- **Rsbuild** configuration was added for **Rspack**-based builds, improving local dev and build tooling alignment.\n\n## Governance and tests\n\n- **IAM governance** and **compute** areas gained **unit tests**; the legacy **addUser** path is marked for removal.\n\n## What wasn’t already covered as a single story\n\nPublished posts include **DAP**, **Oracle on GCP**, and **SQL Server** topics at a high level, but **no one article** ties together this **exact set** of **console-level** changes—especially **GCP-specific UI alignment**, **SQL Server DAP + PITR-aware behavior**, **Genie IP options**, and the **maintenance window null** fix. This draft fills that gap.",
+    "publishedDate": "2026-02-10T12:00:00.000Z",
+    "draft": true,
+    "archived": false,
+    "headerFeatured": false,
+    "featured": false
+  },
+  "warnings": [],
+  "notes": [
+    "Sanity Studio requires references: blogCategory, blogTags (array), and author fields as applicable.",
+    "seo.metaDescription is required in the CMS schema — add in Studio if missing from this export.",
+    "Images (mainImage, thumbnailImage) are not extracted from Markdown; upload in Studio or extend the tool."
+  ]
+}

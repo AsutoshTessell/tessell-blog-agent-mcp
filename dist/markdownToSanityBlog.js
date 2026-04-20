@@ -36,7 +36,8 @@ function normalizeFrontmatter(data) {
     if (!seoMeta)
         seoMeta = pickString(data, 'seoMetaDescription', 'seo_meta_description', 'metaDescription');
     const publishedDate = pickString(data, 'publishedDate', 'published_date', 'date');
-    const draft = Boolean(data.draft);
+    /** Omitted → treat as draft so API/Studio posts are not live until `draft: false` is set explicitly. */
+    const draft = data.draft === undefined ? true : Boolean(data.draft);
     const archived = Boolean(data.archived);
     const headerFeatured = Boolean(data.headerFeatured);
     const featured = Boolean(data.featured);
