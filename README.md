@@ -52,6 +52,12 @@ This MCP walks through a simple loop:
 **Does:** two GROQ queries — all **`blogCategory`** and **`blogTag`** docs that are not archived and not draft, returning **`_id`**, **`name`**, **`slug`** for each. Same client/env as **`get_published_blogs`**.  
 **Why:** pick **`_id`s** for **`blogCategoryRef`**, **`blogTagsRefs`**, or **`.env` defaults** without opening Vision manually.
 
+### `get_blog_image_asset_examples`
+
+**Input:** none.  
+**Does:** recent **`blogPost`** rows that already have **`thumbnailImage`**, returning **`thumbnailAssetRef`** and **`mainAssetRef`** (Sanity **image asset** `_ref` strings you can reuse).  
+**Why:** the Next.js blog **grid** uses **`thumbnailImage`**; the **article hero** uses **`mainImage`**. Without them you get gray placeholders. Paste refs into frontmatter **`thumbnailImageAssetRef`** / **`mainImageAssetRef`**, or set **`TESSELL_DEFAULT_*`** in `.env`, or upload new files in Studio.
+
 ### `save_blog_draft`
 
 **Input:** `title`, `markdownContent`, `draftsFolderPath`.  
@@ -63,14 +69,15 @@ This MCP walks through a simple loop:
 **Input:** `markdownFilePath` **or** raw `markdown` string.  
 **Does:** `gray-matter` for frontmatter; body → Portable Text via `marked`; builds `apiReady.document` (`blogPost`) + `studioFriendly` flat fields.  
 **Category & tags (required by schema):** frontmatter keys **`blogCategoryRef`** (one Sanity `_id`) and **`blogTagsRefs`** (YAML array of `_id`s, or one comma-separated string). If omitted, **`TESSELL_DEFAULT_*`** from `.env` is applied when set. These become **`blogCategory`** and **`blogTags`** reference fields on the payload.  
-**Authors / images:** still added in Studio unless you extend the tool.  
+**Images:** optional **`thumbnailImageAssetRef`** / **`mainImageAssetRef`** (Sanity **image asset** `_ref`s). Listing cards need **`thumbnailImage`**; article hero uses **`mainImage`**. Use MCP **`get_blog_image_asset_examples`** to copy refs from posts that already have art, or env **`TESSELL_DEFAULT_THUMBNAIL_IMAGE_ASSET_REF`** / **`TESSELL_DEFAULT_MAIN_IMAGE_ASSET_REF`**. If only one ref is set, it is reused for both fields.  
+**Authors:** still added in Studio unless you extend the tool.  
 **Draft default:** if frontmatter omits `draft`, the document gets **`draft: true`** so API pushes don’t accidentally look “live.”
 
 ### `publish_blog_to_sanity`
 
-**Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override.  
-**Does:** resolves a `blogPost` document (re-applies **default category/tags from `.env`** when loading saved JSON), then **`mutate([{ createOrReplace }])`** with `@sanity/client`.  
-**Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN`.  
+**Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override, optional **`generateCardImageFromContent`** (or set **`TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE=true`** in `.env`).  
+**Does:** resolves a `blogPost` document (re-applies **default category/tags/images from `.env`** when loading saved JSON), optionally **generates a PNG** from **title + postSummary** (simple “Tessell” gradient card), **uploads** it as a Sanity image asset, and sets **thumbnail + main** when no thumbnail exists, then **`mutate([{ createOrReplace }])`**. This is **not** AI artwork—just readable typography for cards until design uploads real art in Studio.  
+**Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN` (with permission to upload assets).  
 **Dataset:** defaults to `SANITY_DATASET` or **`staging`**.
 
 ---

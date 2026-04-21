@@ -4,6 +4,8 @@ import { readFile } from 'fs/promises';
 import type { ApiReadyBlogDocument } from './markdownToSanityBlog.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
+import { mergeBlogImages } from './blogImageFields.js';
+import { tryGenerateAndUploadBlogCardImage } from './generateBlogCardImage.js';
 
 export type PublishBlogSource = {
   markdownFilePath?: string;
@@ -45,10 +47,12 @@ export async function resolveBlogPostDocument(source: PublishBlogSource): Promis
     const fromApiReady = parsed.apiReady as { document?: unknown } | undefined;
     if (fromApiReady?.document && isBlogPostDoc(fromApiReady.document)) {
       mergeBlogCategoryAndTags(fromApiReady.document, null);
+      mergeBlogImages(fromApiReady.document, null);
       return fromApiReady.document;
     }
     if (isBlogPostDoc(parsed)) {
       mergeBlogCategoryAndTags(parsed, null);
+      mergeBlogImages(parsed, null);
       return parsed;
     }
     throw new Error(
@@ -61,6 +65,7 @@ export async function resolveBlogPostDocument(source: PublishBlogSource): Promis
     throw new Error('documentJson must parse to an object with _type "blogPost" and a string name');
   }
   mergeBlogCategoryAndTags(doc, null);
+  mergeBlogImages(doc, null);
   return doc;
 }
 
@@ -72,6 +77,8 @@ export type PublishBlogPostResult = {
   documentId: string;
   slug: string | undefined;
   sanityResponse?: unknown;
+  /** Present when a title/summary card was generated and uploaded in this run */
+  generatedImageAssetId?: string;
 };
 
 /**
@@ -80,7 +87,12 @@ export type PublishBlogPostResult = {
  */
 export async function publishBlogPostToSanity(
   document: ApiReadyBlogDocument,
-  options?: { dataset?: string; dryRun?: boolean }
+  options?: {
+    dataset?: string;
+    dryRun?: boolean;
+    /** If true (or TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE=true), generates a PNG from title/postSummary and uploads when no thumbnail yet */
+    generateCardImageFromContent?: boolean;
+  }
 ): Promise<PublishBlogPostResult> {
   const projectId = process.env.SANITY_PROJECT_ID;
   const dataset = options?.dataset ?? process.env.SANITY_DATASET ?? 'staging';
@@ -123,6 +135,21 @@ export async function publishBlogPostToSanity(
   });
 
   const docWithId = { ...document, _id: document._id ?? randomUUID() };
+
+  const wantCardImage =
+    Boolean(options?.generateCardImageFromContent) ||
+    process.env.TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE === 'true';
+
+  let generatedImageAssetId: string | undefined;
+  if (wantCardImage) {
+    const gen = await tryGenerateAndUploadBlogCardImage(
+      client,
+      docWithId,
+      slugCurrent ?? 'post'
+    );
+    if (gen) generatedImageAssetId = gen.assetId;
+  }
+
   const sanityResponse = await client.mutate([{ createOrReplace: docWithId as any }]);
 
   return {
@@ -130,8 +157,9 @@ export async function publishBlogPostToSanity(
     dryRun: false,
     projectId,
     dataset,
-    documentId: String(document._id ?? ''),
+    documentId: String(docWithId._id ?? ''),
     slug: slugCurrent,
     sanityResponse,
+    ...(generatedImageAssetId ? { generatedImageAssetId } : {}),
   };
 }

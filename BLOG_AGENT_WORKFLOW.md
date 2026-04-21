@@ -13,6 +13,9 @@ Use this end-to-end when generating a “what’s new” or similar post from **
 2b. **`get_blog_categories_and_tags`**  
    No arguments. Calls Sanity (same env as other tools) and returns usable **`blogCategory`** and **`blogTag`** rows with **`_id`**, **`name`**, **`slug`**. Use the chosen **`_id`s** in draft frontmatter as **`blogCategoryRef`** and **`blogTagsRefs`** so **`markdown_to_sanity_blog`** / **`publish_blog_to_sanity`** payloads validate in Studio.
 
+2c. **`get_blog_image_asset_examples`** (optional — avoids gray cards)  
+   No arguments. Returns recent posts that already have thumbnails, with **`thumbnailAssetRef`** / **`mainAssetRef`**. Paste those into draft frontmatter as **`thumbnailImageAssetRef`** and **`mainImageAssetRef`** (same values as Tessell blog grid + hero expect).
+
 3. **`save_blog_draft`**  
    Save the Markdown draft: **`title`**, **`markdownContent`** (body + optional YAML frontmatter), **`draftsFolderPath`** (e.g. `/path/to/tessell-blog-agent-mcp/drafts`). Or write the file manually with a dated filename.
 
@@ -28,11 +31,12 @@ Use this end-to-end when generating a “what’s new” or similar post from **
    - **`sanityPayloadsJsonPath`** — path to a saved `*.sanity-payloads.json` from step 4, or  
    - **`documentJson`** — stringified `apiReady.document`.  
    Use **`dryRun: true`** first to validate resolution without calling Sanity.  
-   After a successful write, open **Sanity Studio** for **authors** and **images** if your schema still needs them.
+   **Images:** either set **`thumbnailImageAssetRef`** / **`mainImageAssetRef`** in frontmatter (optional **`TESSELL_DEFAULT_*`** in `.env`), reuse refs from **`get_blog_image_asset_examples`**, **or** pass **`generateCardImageFromContent: true`** (or **`TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE=true`** in `.env`) so a **PNG is generated from title + postSummary**, uploaded to Sanity, and attached when no thumbnail exists yet.  
+   Open **Sanity Studio** for **authors** if still required by your schema.
 
 ## Reply expectations
 
-Summarize **what changed in the UI** (from git), **what was missing from existing blogs**, which **category/tag `_id`s** you used (from **`get_blog_categories_and_tags`**), where the **draft file** lives, and whether **`markdown_to_sanity_blog`** / **`publish_blog_to_sanity`** outputs were produced (including **`dryRun`** when testing).
+Summarize **what changed in the UI** (from git), **what was missing from existing blogs**, which **category/tag `_id`s** you used, **how images were handled** (refs from examples, env, or **`generatedImageAssetId`** from auto-generate), where the **draft** and **`.sanity-payloads.json`** live, and **`markdown_to_sanity_blog`** / **`publish_blog_to_sanity`** results (**`dryRun`** vs live).
 
 ---
 
@@ -41,7 +45,7 @@ Summarize **what changed in the UI** (from git), **what was missing from existin
 Paste this into Cursor (or any agent with this MCP) to run the full loop in one go:
 
 ```
-Check the tessell-ui repository for new features from roughly the last two weeks (using the MCP tool that reads the git history with the right repo path and about 14 days). Compare what you find against our published blogs by pulling the live list from Sanity with the get-published-blogs tool. Call get_blog_categories_and_tags to fetch existing blog categories and tags from Sanity (each has _id, name, slug); pick sensible blogCategoryRef and blogTagsRefs values for this post and include them in the draft’s YAML frontmatter so the CMS payload is valid. Write a new Markdown blog post for anything important that isn’t already covered, and save the draft under /Users/asutoshbhere/tessell-blog-agent-mcp/drafts using the save-draft tool. After the draft file exists, run the markdown-to-Sanity-blog tool on that file so you also get the API-ready JSON and the studio-friendly copy-paste version in one go. Optionally use publish_blog_to_sanity to write the post into Sanity: prefer dryRun true first, then run with markdownFilePath or sanityPayloadsJsonPath and a write-capable SANITY_TOKEN in .env; after a real write, note that Studio may still need authors and images. Mention draft path, chosen category/tag refs, conversion outputs, publish result (or dry-run), and a short summary of what changed in the UI and what was missing from the blog.
+Check the tessell-ui repository for new features from roughly the last two weeks using the MCP tool that reads git history (read_tessell_ui_features), passing the correct local tessell-ui repoPath and about 14 days. Compare what you find against our published blogs by calling get_published_blogs. Call get_blog_categories_and_tags and put sensible blogCategoryRef and blogTagsRefs in the draft’s YAML; optionally call get_blog_image_asset_examples if you want to reuse existing image asset _refs for thumbnailImageAssetRef and mainImageAssetRef, or leave those unset. Write a new Markdown blog post for anything important that isn’t already covered and save the draft under /Users/asutoshbhere/tessell-blog-agent-mcp/drafts using the save-draft tool or a dated .md file. After the draft exists, run markdown_to_sanity_blog on that file and save the API-ready output as a sibling *.sanity-payloads.json if helpful. Optionally call publish_blog_to_sanity: run with dryRun true first, then with dryRun false using markdownFilePath or sanityPayloadsJsonPath and a write-capable SANITY_TOKEN in .env; to avoid gray listing cards without picking manual refs, use generateCardImageFromContent true (or set TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE in .env) so a card image is generated from the title and summary and uploaded when no thumbnail is set. After a real write, note that Studio may still need authors. In your reply, give the draft path, chosen category and tag refs, how images were handled (examples/refs vs generated card / generatedImageAssetId), conversion and publish results including dry-run vs live, and a short summary of what changed in the UI and what was missing from the blog.
 ```
 
 Adjust the **drafts path** if your machine uses a different folder.

@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto';
 import { readFile } from 'fs/promises';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
+import { mergeBlogImages } from './blogImageFields.js';
+import { tryGenerateAndUploadBlogCardImage } from './generateBlogCardImage.js';
 function isBlogPostDoc(x) {
     return (typeof x === 'object' &&
         x !== null &&
@@ -30,10 +32,12 @@ export async function resolveBlogPostDocument(source) {
         const fromApiReady = parsed.apiReady;
         if (fromApiReady?.document && isBlogPostDoc(fromApiReady.document)) {
             mergeBlogCategoryAndTags(fromApiReady.document, null);
+            mergeBlogImages(fromApiReady.document, null);
             return fromApiReady.document;
         }
         if (isBlogPostDoc(parsed)) {
             mergeBlogCategoryAndTags(parsed, null);
+            mergeBlogImages(parsed, null);
             return parsed;
         }
         throw new Error('sanityPayloadsJsonPath: expected `apiReady.document` with _type blogPost, or a root blogPost document');
@@ -43,6 +47,7 @@ export async function resolveBlogPostDocument(source) {
         throw new Error('documentJson must parse to an object with _type "blogPost" and a string name');
     }
     mergeBlogCategoryAndTags(doc, null);
+    mergeBlogImages(doc, null);
     return doc;
 }
 /**
@@ -81,14 +86,23 @@ export async function publishBlogPostToSanity(document, options) {
         token,
     });
     const docWithId = { ...document, _id: document._id ?? randomUUID() };
+    const wantCardImage = Boolean(options?.generateCardImageFromContent) ||
+        process.env.TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE === 'true';
+    let generatedImageAssetId;
+    if (wantCardImage) {
+        const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
+        if (gen)
+            generatedImageAssetId = gen.assetId;
+    }
     const sanityResponse = await client.mutate([{ createOrReplace: docWithId }]);
     return {
         ok: true,
         dryRun: false,
         projectId,
         dataset,
-        documentId: String(document._id ?? ''),
+        documentId: String(docWithId._id ?? ''),
         slug: slugCurrent,
         sanityResponse,
+        ...(generatedImageAssetId ? { generatedImageAssetId } : {}),
     };
 }

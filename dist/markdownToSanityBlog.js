@@ -2,6 +2,7 @@ import matter from 'gray-matter';
 import { randomUUID } from 'crypto';
 import { markdownToPortableTextBlocks } from './mdToPortableText.js';
 import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
+import { mergeBlogImages } from './blogImageFields.js';
 function slugify(input) {
     return input
         .toLowerCase()
@@ -60,8 +61,9 @@ export function markdownToSanityBlogPayloads(source) {
     return (async () => {
         const warnings = [];
         const notes = [
-            'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_BLOG_CATEGORY_REF / TESSELL_DEFAULT_BLOG_TAG_REFS in .env) — values are Sanity document `_id`s for blogCategory / blogTag.',
-            'Author and images (mainImage, thumbnailImage) are still set in Studio or extend the tool.',
+            'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.',
+            'Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.',
+            'Authors: add in Studio unless you extend the tool.',
         ];
         let raw = source.markdown;
         if (source.markdownFilePath) {
@@ -111,14 +113,20 @@ export function markdownToSanityBlogPayloads(source) {
         document.headerFeatured = meta.headerFeatured;
         document.featured = meta.featured;
         mergeBlogCategoryAndTags(document, data);
+        mergeBlogImages(document, data);
         if (!document.blogCategory) {
             warnings.push('Missing blogCategory: set `blogCategoryRef` in frontmatter or TESSELL_DEFAULT_BLOG_CATEGORY_REF in .env (Sanity `_id` of a blogCategory document).');
         }
         if (!document.blogTags?.length) {
             warnings.push('Missing blogTags: set `blogTagsRefs` in frontmatter (array or comma-separated) or TESSELL_DEFAULT_BLOG_TAG_REFS in .env (one or more blogTag `_id`s).');
         }
+        if (!document.thumbnailImage?.asset?._ref) {
+            warnings.push('No thumbnail image: blog cards use `thumbnailImage`. Set `thumbnailImageAssetRef` / `mainImageAssetRef` in frontmatter, env defaults, or use get_blog_image_asset_examples + Studio upload.');
+        }
         const catRef = document.blogCategory?._ref;
         const tagsStr = document.blogTags?.map((t) => t._ref).join(', ') || '';
+        const thumbRef = document.thumbnailImage?.asset?._ref;
+        const mainRefDoc = document.mainImage?.asset?._ref;
         const studioFriendly = {
             blogPostTitle: name,
             slug: slugCurrent,
@@ -134,6 +142,8 @@ export function markdownToSanityBlogPayloads(source) {
             featured: meta.featured,
             blogCategoryRef: catRef,
             blogTagsRefs: tagsStr,
+            thumbnailImageAssetRef: thumbRef,
+            mainImageAssetRef: mainRefDoc,
         };
         const mutationHint = 'POST { "mutations": [ { "createOrReplace": <apiReady.document> } ] } to https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset> with Authorization: Bearer <SANITY_TOKEN>. Or use @sanity/client createOrReplace.';
         return {

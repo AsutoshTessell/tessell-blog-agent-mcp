@@ -2,6 +2,8 @@ import matter from 'gray-matter';
 import { randomUUID } from 'crypto';
 import { markdownToPortableTextBlocks, type PtBlock } from './mdToPortableText.js';
 import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
+import type { SanityImageField } from './blogImageFields.js';
+import { mergeBlogImages } from './blogImageFields.js';
 
 export type StudioFriendlyBlog = {
   /** Maps to Sanity field `name` — Blog Post Title */
@@ -22,6 +24,8 @@ export type StudioFriendlyBlog = {
   /** Same ids you use in frontmatter — for Studio parity */
   blogCategoryRef?: string;
   blogTagsRefs?: string;
+  thumbnailImageAssetRef?: string;
+  mainImageAssetRef?: string;
 };
 
 export type ApiReadyBlogDocument = {
@@ -43,6 +47,10 @@ export type ApiReadyBlogDocument = {
   blogCategory?: { _type: 'reference'; _ref: string };
   /** References to `blogTag` document `_id`s (schema requires ≥1) */
   blogTags?: Array<{ _type: 'reference'; _ref: string; _key: string }>;
+  /** Listing card image (blog grid) */
+  thumbnailImage?: SanityImageField;
+  /** Article hero + social preview */
+  mainImage?: SanityImageField;
 };
 
 function slugify(input: string): string {
@@ -114,8 +122,9 @@ export function markdownToSanityBlogPayloads(source: {
   return (async () => {
     const warnings: string[] = [];
     const notes: string[] = [
-      'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_BLOG_CATEGORY_REF / TESSELL_DEFAULT_BLOG_TAG_REFS in .env) — values are Sanity document `_id`s for blogCategory / blogTag.',
-      'Author and images (mainImage, thumbnailImage) are still set in Studio or extend the tool.',
+      'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.',
+      'Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.',
+      'Authors: add in Studio unless you extend the tool.',
     ];
 
     let raw = source.markdown;
@@ -168,6 +177,7 @@ export function markdownToSanityBlogPayloads(source: {
     document.featured = meta.featured;
 
     mergeBlogCategoryAndTags(document, data);
+    mergeBlogImages(document, data);
 
     if (!document.blogCategory) {
       warnings.push(
@@ -179,9 +189,16 @@ export function markdownToSanityBlogPayloads(source: {
         'Missing blogTags: set `blogTagsRefs` in frontmatter (array or comma-separated) or TESSELL_DEFAULT_BLOG_TAG_REFS in .env (one or more blogTag `_id`s).'
       );
     }
+    if (!document.thumbnailImage?.asset?._ref) {
+      warnings.push(
+        'No thumbnail image: blog cards use `thumbnailImage`. Set `thumbnailImageAssetRef` / `mainImageAssetRef` in frontmatter, env defaults, or use get_blog_image_asset_examples + Studio upload.'
+      );
+    }
 
     const catRef = document.blogCategory?._ref;
     const tagsStr = document.blogTags?.map((t) => t._ref).join(', ') || '';
+    const thumbRef = document.thumbnailImage?.asset?._ref;
+    const mainRefDoc = document.mainImage?.asset?._ref;
 
     const studioFriendly: StudioFriendlyBlog = {
       blogPostTitle: name,
@@ -198,6 +215,8 @@ export function markdownToSanityBlogPayloads(source: {
       featured: meta.featured,
       blogCategoryRef: catRef,
       blogTagsRefs: tagsStr,
+      thumbnailImageAssetRef: thumbRef,
+      mainImageAssetRef: mainRefDoc,
     };
 
     const mutationHint =

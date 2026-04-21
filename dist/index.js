@@ -9,6 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { BLOG_POSTS_QUERY } from './blogQueries.js';
 import { BLOG_CATEGORIES_QUERY, BLOG_TAGS_QUERY } from './blogTaxonomyQueries.js';
+import { BLOG_IMAGE_EXAMPLES_QUERY } from './blogImageExamplesQuery.js';
 import { loadTessellWebsiteEnv } from './loadEnv.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
@@ -61,6 +62,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
             {
+                name: 'get_blog_image_asset_examples',
+                description: 'Returns up to 15 recent blog posts that have a thumbnailImage, with thumbnailAssetRef and mainAssetRef (Sanity image asset _ref strings). Reuse refs in draft frontmatter as thumbnailImageAssetRef / mainImageAssetRef so blog cards show an image, or upload new assets in Studio.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {},
+                },
+            },
+            {
                 name: 'save_blog_draft',
                 description: 'Saves the AI generated Markdown blog draft to a file in the cms/drafts folder.',
                 inputSchema: {
@@ -84,7 +93,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'markdown_to_sanity_blog',
-                description: 'Converts a Markdown draft (optional YAML frontmatter) into (1) apiReady: blogPost JSON with Portable Text postBody for Sanity mutate/createOrReplace, and (2) studioFriendly: flat strings. Required fields blogCategory + blogTags: use frontmatter blogCategoryRef and blogTagsRefs (or .env TESSELL_DEFAULT_BLOG_CATEGORY_REF / TESSELL_DEFAULT_BLOG_TAG_REFS). Authors/images not set here.',
+                description: 'Converts Markdown + frontmatter to apiReady blogPost JSON. blogCategory/blogTags required; optional thumbnailImageAssetRef / mainImageAssetRef for grid + hero images (Sanity image asset _refs; see get_blog_image_asset_examples). .env defaults supported. Authors not set here.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -101,7 +110,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'publish_blog_to_sanity',
-                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Same sources as markdown_to_sanity_blog; env defaults fill blogCategory/blogTags if missing. Optional dryRun. After write, Studio may still need authors and images.',
+                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Optional generateCardImageFromContent (or env TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE): renders title+summary as PNG, uploads asset, sets thumbnail+main image if missing. Same sources as markdown_to_sanity_blog; env fills category/tags/images defaults. dryRun skips uploads.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -124,6 +133,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         dataset: {
                             type: 'string',
                             description: 'Override SANITY_DATASET (default: staging or env).',
+                        },
+                        generateCardImageFromContent: {
+                            type: 'boolean',
+                            description: 'If true, generates a branded PNG from post title + postSummary and uploads to Sanity when no thumbnailImage yet (requires write token + asset permissions).',
                         },
                     },
                 },
@@ -225,6 +238,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             throw new McpError(ErrorCode.InternalError, `Sanity taxonomy fetch failed: ${e.message}`);
         }
     }
+    if (request.params.name === 'get_blog_image_asset_examples') {
+        try {
+            loadTessellWebsiteEnv();
+            const projectId = process.env.SANITY_PROJECT_ID;
+            if (!projectId) {
+                throw new McpError(ErrorCode.InternalError, 'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.');
+            }
+            const dataset = process.env.SANITY_DATASET || 'staging';
+            const client = createClient({
+                projectId,
+                dataset,
+                apiVersion: '2024-01-01',
+                useCdn: process.env.NODE_ENV === 'production',
+                perspective: 'published',
+                token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
+            });
+            const examples = await client.fetch(BLOG_IMAGE_EXAMPLES_QUERY);
+            const meta = {
+                sanityProjectId: projectId,
+                sanityDataset: dataset,
+                count: Array.isArray(examples) ? examples.length : 0,
+                hint: 'Use thumbnailAssetRef (or mainAssetRef) in markdown frontmatter as thumbnailImageAssetRef / mainImageAssetRef — they must be existing image asset _refs in this dataset.',
+            };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({ meta, examples }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            if (e instanceof McpError)
+                throw e;
+            throw new McpError(ErrorCode.InternalError, `Sanity image examples fetch failed: ${e.message}`);
+        }
+    }
     if (request.params.name === 'markdown_to_sanity_blog') {
         const args = (request.params.arguments || {});
         if (!args.markdown?.trim() && !args.markdownFilePath?.trim()) {
@@ -260,10 +311,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const result = await publishBlogPostToSanity(document, {
                 dryRun: Boolean(args.dryRun),
                 dataset: args.dataset?.trim() || undefined,
+                generateCardImageFromContent: Boolean(args.generateCardImageFromContent),
             });
             const payload = {
                 ...result,
-                reminder: 'Studio may still need blogCategory, blogTags, authors, and images. Open the document in Sanity Studio after write.',
+                reminder: result.dryRun
+                    ? 'Dry run only — no write to Sanity.'
+                    : result.generatedImageAssetId
+                        ? `Generated card image uploaded to Sanity (asset id in generatedImageAssetId). Authors may still be required in Studio.`
+                        : 'Open in Studio if authors or manual image tweaks are still required.',
             };
             return {
                 content: [
