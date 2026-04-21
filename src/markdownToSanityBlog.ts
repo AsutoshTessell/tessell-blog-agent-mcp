@@ -1,6 +1,7 @@
 import matter from 'gray-matter';
 import { randomUUID } from 'crypto';
 import { markdownToPortableTextBlocks, type PtBlock } from './mdToPortableText.js';
+import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
 
 export type StudioFriendlyBlog = {
   /** Maps to Sanity field `name` — Blog Post Title */
@@ -18,6 +19,9 @@ export type StudioFriendlyBlog = {
   archived: boolean;
   headerFeatured: boolean;
   featured: boolean;
+  /** Same ids you use in frontmatter — for Studio parity */
+  blogCategoryRef?: string;
+  blogTagsRefs?: string;
 };
 
 export type ApiReadyBlogDocument = {
@@ -35,6 +39,10 @@ export type ApiReadyBlogDocument = {
   archived?: boolean;
   headerFeatured?: boolean;
   featured?: boolean;
+  /** Reference to a `blogCategory` document `_id` */
+  blogCategory?: { _type: 'reference'; _ref: string };
+  /** References to `blogTag` document `_id`s (schema requires ≥1) */
+  blogTags?: Array<{ _type: 'reference'; _ref: string; _key: string }>;
 };
 
 function slugify(input: string): string {
@@ -106,9 +114,8 @@ export function markdownToSanityBlogPayloads(source: {
   return (async () => {
     const warnings: string[] = [];
     const notes: string[] = [
-      'Sanity Studio requires references: blogCategory, blogTags (array), and author fields as applicable.',
-      'seo.metaDescription is required in the CMS schema — add in Studio if missing from this export.',
-      'Images (mainImage, thumbnailImage) are not extracted from Markdown; upload in Studio or extend the tool.',
+      'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_BLOG_CATEGORY_REF / TESSELL_DEFAULT_BLOG_TAG_REFS in .env) — values are Sanity document `_id`s for blogCategory / blogTag.',
+      'Author and images (mainImage, thumbnailImage) are still set in Studio or extend the tool.',
     ];
 
     let raw = source.markdown;
@@ -160,6 +167,22 @@ export function markdownToSanityBlogPayloads(source: {
     document.headerFeatured = meta.headerFeatured;
     document.featured = meta.featured;
 
+    mergeBlogCategoryAndTags(document, data);
+
+    if (!document.blogCategory) {
+      warnings.push(
+        'Missing blogCategory: set `blogCategoryRef` in frontmatter or TESSELL_DEFAULT_BLOG_CATEGORY_REF in .env (Sanity `_id` of a blogCategory document).'
+      );
+    }
+    if (!document.blogTags?.length) {
+      warnings.push(
+        'Missing blogTags: set `blogTagsRefs` in frontmatter (array or comma-separated) or TESSELL_DEFAULT_BLOG_TAG_REFS in .env (one or more blogTag `_id`s).'
+      );
+    }
+
+    const catRef = document.blogCategory?._ref;
+    const tagsStr = document.blogTags?.map((t) => t._ref).join(', ') || '';
+
     const studioFriendly: StudioFriendlyBlog = {
       blogPostTitle: name,
       slug: slugCurrent,
@@ -173,6 +196,8 @@ export function markdownToSanityBlogPayloads(source: {
       archived: meta.archived,
       headerFeatured: meta.headerFeatured,
       featured: meta.featured,
+      blogCategoryRef: catRef,
+      blogTagsRefs: tagsStr,
     };
 
     const mutationHint =

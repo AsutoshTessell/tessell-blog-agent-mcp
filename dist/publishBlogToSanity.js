@@ -2,6 +2,7 @@ import { createClient } from '@sanity/client';
 import { randomUUID } from 'crypto';
 import { readFile } from 'fs/promises';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
+import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
 function isBlogPostDoc(x) {
     return (typeof x === 'object' &&
         x !== null &&
@@ -28,9 +29,11 @@ export async function resolveBlogPostDocument(source) {
         const parsed = JSON.parse(text);
         const fromApiReady = parsed.apiReady;
         if (fromApiReady?.document && isBlogPostDoc(fromApiReady.document)) {
+            mergeBlogCategoryAndTags(fromApiReady.document, null);
             return fromApiReady.document;
         }
         if (isBlogPostDoc(parsed)) {
+            mergeBlogCategoryAndTags(parsed, null);
             return parsed;
         }
         throw new Error('sanityPayloadsJsonPath: expected `apiReady.document` with _type blogPost, or a root blogPost document');
@@ -39,6 +42,7 @@ export async function resolveBlogPostDocument(source) {
     if (!isBlogPostDoc(doc)) {
         throw new Error('documentJson must parse to an object with _type "blogPost" and a string name');
     }
+    mergeBlogCategoryAndTags(doc, null);
     return doc;
 }
 /**

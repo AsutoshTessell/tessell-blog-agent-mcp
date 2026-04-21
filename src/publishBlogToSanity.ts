@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { readFile } from 'fs/promises';
 import type { ApiReadyBlogDocument } from './markdownToSanityBlog.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
+import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
 
 export type PublishBlogSource = {
   markdownFilePath?: string;
@@ -43,9 +44,11 @@ export async function resolveBlogPostDocument(source: PublishBlogSource): Promis
     const parsed = JSON.parse(text) as Record<string, unknown>;
     const fromApiReady = parsed.apiReady as { document?: unknown } | undefined;
     if (fromApiReady?.document && isBlogPostDoc(fromApiReady.document)) {
+      mergeBlogCategoryAndTags(fromApiReady.document, null);
       return fromApiReady.document;
     }
     if (isBlogPostDoc(parsed)) {
+      mergeBlogCategoryAndTags(parsed, null);
       return parsed;
     }
     throw new Error(
@@ -57,6 +60,7 @@ export async function resolveBlogPostDocument(source: PublishBlogSource): Promis
   if (!isBlogPostDoc(doc)) {
     throw new Error('documentJson must parse to an object with _type "blogPost" and a string name');
   }
+  mergeBlogCategoryAndTags(doc, null);
   return doc;
 }
 

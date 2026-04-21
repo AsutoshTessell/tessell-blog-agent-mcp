@@ -27,7 +27,7 @@ This MCP walks through a simple loop:
 ## Setup
 
 1. **Build:** `npm install` then `npm run build`
-2. **Env:** copy `.env.example` → `.env` and set at least `SANITY_PROJECT_ID` (and usually `SANITY_DATASET`, `SANITY_TOKEN` for reads + writes). See `.env.example` for read vs write tokens.
+2. **Env:** copy `.env.example` → `.env` and set at least `SANITY_PROJECT_ID` (and usually `SANITY_DATASET`, `SANITY_TOKEN` for reads + writes). The CMS **requires** a `blogCategory` and at least one `blogTag` on each post: set **`TESSELL_DEFAULT_BLOG_CATEGORY_REF`** and **`TESSELL_DEFAULT_BLOG_TAG_REFS`** (comma-separated tag `_id`s), **or** put **`blogCategoryRef`** / **`blogTagsRefs`** in each draft’s YAML (see below). Use Vision / Studio to copy document `_id`s (e.g. `*[_type == "blogCategory"]{_id,name}`).
 3. **Cursor / MCP:** point your MCP config at `node /path/to/tessell-blog-agent-mcp/dist/index.js` (or your wrapper).
 
 ---
@@ -46,6 +46,12 @@ This MCP walks through a simple loop:
 **Does:** loads env (same pattern as tessell-website), then **`@sanity/client.fetch(BLOG_POSTS_QUERY)`** — the **published** blog list your site would show, so you can compare before writing.  
 **Why:** answers “do we already have a post on this?” before you draft.
 
+### `get_blog_categories_and_tags`
+
+**Input:** none.  
+**Does:** two GROQ queries — all **`blogCategory`** and **`blogTag`** docs that are not archived and not draft, returning **`_id`**, **`name`**, **`slug`** for each. Same client/env as **`get_published_blogs`**.  
+**Why:** pick **`_id`s** for **`blogCategoryRef`**, **`blogTagsRefs`**, or **`.env` defaults** without opening Vision manually.
+
 ### `save_blog_draft`
 
 **Input:** `title`, `markdownContent`, `draftsFolderPath`.  
@@ -56,13 +62,14 @@ This MCP walks through a simple loop:
 
 **Input:** `markdownFilePath` **or** raw `markdown` string.  
 **Does:** `gray-matter` for frontmatter; body → Portable Text via `marked`; builds `apiReady.document` (`blogPost`) + `studioFriendly` flat fields.  
-**Note:** category, tags, authors, images are **not** inferred—finish those in Studio or extend the pipeline.  
+**Category & tags (required by schema):** frontmatter keys **`blogCategoryRef`** (one Sanity `_id`) and **`blogTagsRefs`** (YAML array of `_id`s, or one comma-separated string). If omitted, **`TESSELL_DEFAULT_*`** from `.env` is applied when set. These become **`blogCategory`** and **`blogTags`** reference fields on the payload.  
+**Authors / images:** still added in Studio unless you extend the tool.  
 **Draft default:** if frontmatter omits `draft`, the document gets **`draft: true`** so API pushes don’t accidentally look “live.”
 
 ### `publish_blog_to_sanity`
 
 **Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override.  
-**Does:** resolves a `blogPost` document, then **`mutate([{ createOrReplace }])`** with `@sanity/client`.  
+**Does:** resolves a `blogPost` document (re-applies **default category/tags from `.env`** when loading saved JSON), then **`mutate([{ createOrReplace }])`** with `@sanity/client`.  
 **Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN`.  
 **Dataset:** defaults to `SANITY_DATASET` or **`staging`**.
 

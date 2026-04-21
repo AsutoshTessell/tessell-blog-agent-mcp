@@ -8,6 +8,7 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { BLOG_POSTS_QUERY } from './blogQueries.js';
+import { BLOG_CATEGORIES_QUERY, BLOG_TAGS_QUERY } from './blogTaxonomyQueries.js';
 import { loadTessellWebsiteEnv } from './loadEnv.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
@@ -52,6 +53,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
             {
+                name: 'get_blog_categories_and_tags',
+                description: 'Fetches existing blogCategory and blogTag documents from Sanity (GROQ: _id, name, slug). Excludes archived and draft taxonomy rows. Same env as get_published_blogs. Use _id values in frontmatter blogCategoryRef / blogTagsRefs or TESSELL_DEFAULT_* in .env.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {},
+                },
+            },
+            {
                 name: 'save_blog_draft',
                 description: 'Saves the AI generated Markdown blog draft to a file in the cms/drafts folder.',
                 inputSchema: {
@@ -75,7 +84,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'markdown_to_sanity_blog',
-                description: 'Converts a Markdown draft (optional YAML frontmatter) into (1) apiReady: blogPost JSON with Portable Text postBody for Sanity mutate/createOrReplace, and (2) studioFriendly: flat strings for copy-paste into Studio. Pass markdownFilePath OR markdown. Images/refs not included.',
+                description: 'Converts a Markdown draft (optional YAML frontmatter) into (1) apiReady: blogPost JSON with Portable Text postBody for Sanity mutate/createOrReplace, and (2) studioFriendly: flat strings. Required fields blogCategory + blogTags: use frontmatter blogCategoryRef and blogTagsRefs (or .env TESSELL_DEFAULT_BLOG_CATEGORY_REF / TESSELL_DEFAULT_BLOG_TAG_REFS). Authors/images not set here.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -92,7 +101,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'publish_blog_to_sanity',
-                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Provide exactly one source: markdownFilePath (converts like markdown_to_sanity_blog), sanityPayloadsJsonPath (output from that tool saved as .sanity-payloads.json), or documentJson (stringified apiReady.document). Optional dryRun validates source without calling Sanity.',
+                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Same sources as markdown_to_sanity_blog; env defaults fill blogCategory/blogTags if missing. Optional dryRun. After write, Studio may still need authors and images.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -173,6 +182,47 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             if (e instanceof McpError)
                 throw e;
             throw new McpError(ErrorCode.InternalError, `Sanity fetch failed: ${e.message}`);
+        }
+    }
+    if (request.params.name === 'get_blog_categories_and_tags') {
+        try {
+            loadTessellWebsiteEnv();
+            const projectId = process.env.SANITY_PROJECT_ID;
+            if (!projectId) {
+                throw new McpError(ErrorCode.InternalError, 'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.');
+            }
+            const dataset = process.env.SANITY_DATASET || 'staging';
+            const client = createClient({
+                projectId,
+                dataset,
+                apiVersion: '2024-01-01',
+                useCdn: process.env.NODE_ENV === 'production',
+                perspective: 'published',
+                token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
+            });
+            const [categories, tags] = await Promise.all([
+                client.fetch(BLOG_CATEGORIES_QUERY),
+                client.fetch(BLOG_TAGS_QUERY),
+            ]);
+            const meta = {
+                sanityProjectId: projectId,
+                sanityDataset: dataset,
+                categoryCount: Array.isArray(categories) ? categories.length : 0,
+                tagCount: Array.isArray(tags) ? tags.length : 0,
+            };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({ meta, categories, tags }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            if (e instanceof McpError)
+                throw e;
+            throw new McpError(ErrorCode.InternalError, `Sanity taxonomy fetch failed: ${e.message}`);
         }
     }
     if (request.params.name === 'markdown_to_sanity_blog') {
