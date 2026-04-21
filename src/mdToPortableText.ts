@@ -36,7 +36,17 @@ function inlineToSpans(
 
   for (const t of tokens) {
     if (t.type === 'text') {
-      out.push(span((t as Tokens.Text).text, activeMarks));
+      const tx = t as Tokens.Text;
+      // List items often wrap inline markup in a single `text` node whose `.text` is still raw (`**bold**`).
+      // Nested `tokens` carry the real strong/em children — recurse when present.
+      if (tx.tokens?.length) {
+        out.push(...inlineToSpans(tx.tokens, markDefs, activeMarks));
+      } else {
+        out.push(span(tx.text, activeMarks));
+      }
+    } else if (t.type === 'paragraph') {
+      // Loose list items use `paragraph` → inline tokens; using `.text` alone would keep literal `**`.
+      out.push(...inlineToSpans((t as Tokens.Paragraph).tokens, markDefs, activeMarks));
     } else if (t.type === 'strong') {
       const st = t as Tokens.Strong;
       out.push(...inlineToSpans(st.tokens, markDefs, [...activeMarks, 'strong']));
