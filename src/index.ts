@@ -18,6 +18,12 @@ import { BLOG_IMAGE_EXAMPLES_QUERY } from './blogImageExamplesQuery.js';
 import { loadTessellWebsiteEnv } from './loadEnv.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
+import {
+  BLOG_STYLE_GUIDE,
+  PREFERRED_SAMPLE_SLUGS,
+  BLOG_SAMPLE_PREFERRED_QUERY,
+  BLOG_SAMPLE_FALLBACK_QUERY,
+} from './blogStyleGuide.js';
 
 const execAsync = promisify(exec);
 
@@ -156,6 +162,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'boolean',
               description:
                 'If true, generates a branded PNG from post title + postSummary and uploads to Sanity when no thumbnailImage yet (requires write token + asset permissions).',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_blog_style_guide',
+        description:
+          'Returns the Tessell blog writing style guide — tone, structure, title patterns, engagement techniques, and anti-patterns — derived from analyzing published posts. Call this BEFORE writing any draft so the output matches the quality and voice of existing Tessell blogs.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_published_blog_samples',
+        description:
+          'Fetches 3 recent published blog posts with FULL body text from Sanity. Use this to study how existing posts are written — their tone, paragraph flow, headings, and engagement — before writing a new draft. Pair with get_blog_style_guide.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            count: {
+              type: 'number',
+              description: 'Number of sample posts to fetch (default: 3, max: 5).',
             },
           },
         },
@@ -409,6 +438,75 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     } catch (e: any) {
       throw new McpError(ErrorCode.InternalError, `Failed to write file: ${e.message}`);
+    }
+  }
+
+  if (request.params.name === 'get_blog_style_guide') {
+    return {
+      content: [{ type: 'text', text: BLOG_STYLE_GUIDE }],
+    };
+  }
+
+  if (request.params.name === 'get_published_blog_samples') {
+    try {
+      loadTessellWebsiteEnv();
+      const projectId = process.env.SANITY_PROJECT_ID;
+      if (!projectId) {
+        throw new McpError(
+          ErrorCode.InternalError,
+          'SANITY_PROJECT_ID is missing.'
+        );
+      }
+      const dataset = process.env.SANITY_DATASET || 'staging';
+      const count = Math.min((request.params.arguments as any)?.count || 3, 5);
+
+      const client = createClient({
+        projectId,
+        dataset,
+        apiVersion: '2024-01-01',
+        useCdn: false,
+        perspective: 'published',
+        token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
+      });
+
+      let samples = await client.fetch(BLOG_SAMPLE_PREFERRED_QUERY, {
+        slugs: PREFERRED_SAMPLE_SLUGS,
+      });
+      if (!samples?.length) {
+        const fallback = BLOG_SAMPLE_FALLBACK_QUERY.replace('[0...3]', `[0...${count}]`);
+        samples = await client.fetch(fallback);
+      } else if (samples.length > count) {
+        samples = samples.slice(0, count);
+      }
+
+      const formatted = (samples as any[]).map((p: any) => ({
+        title: p.name,
+        slug: p.slug,
+        category: p.category,
+        summary: p.postSummary,
+        publishedDate: p.publishedDate,
+        bodyText: (p.bodyText || []).join(' '),
+      }));
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                instruction:
+                  'Study how these published posts are written — their opening hooks, paragraph flow, heading style, use of bold, customer examples, and closing takeaways. Write your draft in the SAME voice and structure. Do NOT write bullet-only release notes.',
+                samples: formatted,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (e: any) {
+      if (e instanceof McpError) throw e;
+      throw new McpError(ErrorCode.InternalError, `Failed to fetch blog samples: ${e.message}`);
     }
   }
 

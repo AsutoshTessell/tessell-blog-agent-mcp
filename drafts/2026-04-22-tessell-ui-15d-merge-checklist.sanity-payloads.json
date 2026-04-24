@@ -1,0 +1,1113 @@
+{
+  "apiReady": {
+    "document": {
+      "_type": "blogPost",
+      "_id": "bc052ab7-0ce2-44e9-85cd-8826cd2e2828",
+      "name": "15-day tessell-ui merge checklist (April 2026)",
+      "slug": {
+        "_type": "slug",
+        "current": "tessell-ui-15d-merge-checklist-apr-2026"
+      },
+      "postBody": [
+        {
+          "_type": "block",
+          "_key": "18363f7150ce",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "09ab5dce1da1",
+              "text": "This ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "bf8d9611f1f2",
+              "text": "checklist",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "75a854ffa650",
+              "text": " summarizes ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "926c2773611c",
+              "text": "themes in tessell-ui merges from the last ~15 days",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "8b1d593556d7",
+              "text": " (local repo scan). It is meant for teams who want a ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "a174e067589f",
+              "text": "fast inventory",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ead8fead16cc",
+              "text": "; see our other posts for product strategy, benchmarks, and engine-specific guides.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "ee26f013e11c",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b7354787922a",
+              "text": "Merge themes (grouped)",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "5c0f3f344b3c",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "69efbb0532d6",
+              "text": "Google Cloud (GCP)",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "110290f8f07d",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "23b2e27a587e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "c59eac2df5ae",
+              "text": "Disable certain ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "49ce954a2be7",
+              "text": "precheck / feasibility",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "73ec02f0a5bf",
+              "text": " UI where not useful.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "a78a97567b3a",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "5e6d32b1087d",
+              "text": "Clone refresh",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "781c08b61277",
+              "text": " off for most GCP engines; ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "d7763aeb577f",
+              "text": "exception",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "379b4edab5f0",
+              "text": " for Oracle.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "84056c9055c1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "517b6763ee0a",
+              "text": "Remove Terraform",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "f81b37073f3b",
+              "text": " from the ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "d78a211e1b23",
+              "text": "Code",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "e362f59a3e3e",
+              "text": " action for GCP.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "8c546d7b06d9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "0ee053867c19",
+              "text": "Native backup RPO",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ea29d0a3ff26",
+              "text": " policy ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "ecbdac90088f",
+              "text": "removed",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "e77f6d587c9b",
+              "text": " for ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "53aa7a45daba",
+              "text": "GCP Cloud SQL Server",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "83043a89d10e",
+              "text": " in the UI.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "5423afdbc38b",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "bef5d0789a97",
+              "text": "Access policies",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "8ce42666d73e",
+              "text": " for ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "b432109ed111",
+              "text": "GCP AV",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "7d0f99786b11",
+              "text": " machines.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "d0445f2f55bd",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f32dcdd39e11",
+              "text": "Instance count",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "905776939ada",
+              "text": " from API instead of hard-coded values.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "ded7c5f04d5e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "9cf18ae1cfc8",
+              "text": "SQL Server",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "c26a54ff02b0",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "d7ca4c98492b",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "9091e860f232",
+              "text": "DAP",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "13ba9a094406",
+              "text": " + ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "e172dd69490f",
+              "text": "subscription/region-aware PITR",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "82bdb75d3718",
+              "text": " handling.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "ca1620c427a6",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "a61393ad85c1",
+              "text": "Restrictions",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "4fe90bd3129d",
+              "text": " when ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "ced1eaefcb14",
+              "text": "PITR",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "466b7e7b3920",
+              "text": " cannot support a DAP choice.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "941a11385573",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ed609b9d0221",
+              "text": "Clone:",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "fc971fe202e2",
+              "text": " ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "ef4d993222bc",
+              "text": "pre-fill and lock",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "8f5ab3f7d4ca",
+              "text": " ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "d87bf76923fb",
+              "text": "collation",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ed1babffa274",
+              "text": " when appropriate.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "d3b79f5a49c4",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "1a97681d7434",
+              "text": "Reliability & ops",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "84998ef30875",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "f050d35777aa",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "8e13eda9221b",
+              "text": "Maintenance window:",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "1ba87b50d681",
+              "text": " no crash when ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "ce7354bbc0f2",
+              "text": "maintenanceWindow",
+              "marks": [
+                "strong",
+                "code"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "606a04230ed6",
+              "text": " is ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "66541b1b2ea6",
+              "text": "null",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "2fda17bd643f",
+              "text": ".  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "c4411fdb5f8f",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "82081ffbfe25",
+              "text": "Monitoring",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "87e2cb048681",
+              "text": " bug fixes.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "71640685d4d0",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "bf46b8160399",
+              "text": "Reject or handle ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "3fc963ad6749",
+              "text": "unsupported",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "9d66e797ef55",
+              "text": " ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "6c2cb2b21db2",
+              "text": "maintenance_window",
+              "marks": [
+                "code"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "d0a8f188adc6",
+              "text": " / ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "1321f1d43f1e",
+              "text": "server_patching_config",
+              "marks": [
+                "code"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "15fbeeaf3814",
+              "text": " argument combos.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "ff6a2cb55383",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f59c6e707dc6",
+              "text": "Image status",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "c10dd720429a",
+              "text": " in provisioning ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "d523263a9a73",
+              "text": "images",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "5184fbbd6ca8",
+              "text": " adapter.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "fe4f8fd9d307",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "854464355442",
+              "text": "Networking & access",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "4ad7cabf9681",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "ded801aff03b",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "7c8c521f595b",
+              "text": "Genie:",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "09901caf026c",
+              "text": " ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "95ef2403640e",
+              "text": "public and private",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "25dd7bac5d78",
+              "text": " IPs.  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "609af99fb233",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "5b7266f2b764",
+              "text": "Azure:",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "1a6fb76b2175",
+              "text": " private ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "66c35d4774f1",
+              "text": "connectivity",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "46b7a6561277",
+              "text": " can be ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "df8224e45fec",
+              "text": "disabled",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "a701e2d400fb",
+              "text": " when required.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "8cc1055a9858",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "2430448e2b8e",
+              "text": "DR & feature flags",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "02fd8852401d",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "7b55e1d08772",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "dd562f3b77fa",
+              "text": "DR-drill",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "20d11fce29fb",
+              "text": " ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "41b65885d2d8",
+              "text": "feature flag",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "debedc89277a",
+              "text": " shared across supported engine DR-drill flows.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "cf853011dfd2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "15a4699a940a",
+              "text": "Engineering",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "17182044c585",
+              "text": "  ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "c5737d65fef8",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ce0e62330368",
+              "text": "Rsbuild",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "b275624b8a64",
+              "text": " config for ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "0b1fd5916c27",
+              "text": "Rspack",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "80c9d983e963",
+              "text": ".  ",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "385d534606f6",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "4709be8f051c",
+              "text": "Tests:",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "5eb5c14b0298",
+              "text": " IAM governance; compute pages; ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "f5e5a98a0387",
+              "text": "legacy addUser",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "fe8fbe554ee2",
+              "text": " marked for deletion.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "7c8dbfa2412b",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "7b28a73b518a",
+              "text": "Already on the blog",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "d72a5516e7fd",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "8a02e1168bfc",
+              "text": "We already cover ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "5f90af0212d3",
+              "text": "DAP/DR strategy",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "f9f5a47e7d74",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "9c371bba1ec5",
+              "text": "Oracle on GCP",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "4a51c97bdcc2",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "227c4392625a",
+              "text": "SQL Server HA/migration",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "fb8ed88b1d41",
+              "text": ", and more in long-form posts. This note fills the gap: ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "5c3905291955",
+              "text": "“what did the console merge in the last two weeks?”",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "60619dbdb68e",
+              "text": " without duplicating those narratives.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "850a3a2cb61d",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "8d0aaabf048a",
+              "text": " ",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "f35b3756a6b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "8a8fccf379f5",
+              "text": "For exact behavior in your account, use in-product help and your Tessell support channel.",
+              "marks": [
+                "em"
+              ]
+            }
+          ]
+        }
+      ],
+      "postSummary": "A scannable list of what landed in tessell-ui in the last ~15 days—GCP, SQL Server, stability, and tooling— alongside links to our deeper blog library for context.",
+      "description": "Commit-driven checklist from git for operators tracking Tessell console changes; not a replacement for product docs.",
+      "seo": {
+        "title": "tessell-ui: 15-day merge checklist (Apr 2026)",
+        "metaDescription": "Recent merges in tessell-ui: GCP UI checks, DAP/PITR, maintenance window fix, Rspack/Rsbuild, monitoring, access policies, and more."
+      },
+      "publishedDate": "2026-04-22",
+      "draft": true,
+      "archived": false,
+      "headerFeatured": false,
+      "featured": false,
+      "blogCategory": {
+        "_type": "reference",
+        "_ref": "662befebad639d6ff9eb3f42"
+      },
+      "blogTags": [
+        {
+          "_type": "reference",
+          "_ref": "67dddfff58184d6cd72bce7c",
+          "_key": "ae0e861ed39d"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bb0f98a5fee6eb7fa12f",
+          "_key": "dab502734c2c"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bb89ceddfaaf24dc8358",
+          "_key": "3c878b18efe2"
+        }
+      ]
+    },
+    "mutationHint": "POST { \"mutations\": [ { \"createOrReplace\": <apiReady.document> } ] } to https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset> with Authorization: Bearer <SANITY_TOKEN>. Or use @sanity/client createOrReplace."
+  },
+  "studioFriendly": {
+    "blogPostTitle": "15-day tessell-ui merge checklist (April 2026)",
+    "slug": "tessell-ui-15d-merge-checklist-apr-2026",
+    "postSummary": "A scannable list of what landed in tessell-ui in the last ~15 days—GCP, SQL Server, stability, and tooling— alongside links to our deeper blog library for context.",
+    "description": "Commit-driven checklist from git for operators tracking Tessell console changes; not a replacement for product docs.",
+    "seoTitle": "tessell-ui: 15-day merge checklist (Apr 2026)",
+    "seoMetaDescription": "Recent merges in tessell-ui: GCP UI checks, DAP/PITR, maintenance window fix, Rspack/Rsbuild, monitoring, access policies, and more.",
+    "postBody_markdown": "This **checklist** summarizes **themes in tessell-ui merges from the last ~15 days** (local repo scan). It is meant for teams who want a **fast inventory**; see our other posts for product strategy, benchmarks, and engine-specific guides.\n\n## Merge themes (grouped)\n\n**Google Cloud (GCP)**  \n- Disable certain **precheck / feasibility** UI where not useful.  \n- **Clone refresh** off for most GCP engines; **exception** for Oracle.  \n- **Remove Terraform** from the **Code** action for GCP.  \n- **Native backup RPO** policy **removed** for **GCP Cloud SQL Server** in the UI.  \n- **Access policies** for **GCP AV** machines.  \n- **Instance count** from API instead of hard-coded values.  \n\n**SQL Server**  \n- **DAP** + **subscription/region-aware PITR** handling.  \n- **Restrictions** when **PITR** cannot support a DAP choice.  \n- **Clone:** **pre-fill and lock** **collation** when appropriate.  \n\n**Reliability & ops**  \n- **Maintenance window:** no crash when **`maintenanceWindow`** is **null**.  \n- **Monitoring** bug fixes.  \n- Reject or handle **unsupported** `maintenance_window` / `server_patching_config` argument combos.  \n- **Image status** in provisioning **images** adapter.  \n\n**Networking & access**  \n- **Genie:** **public and private** IPs.  \n- **Azure:** private **connectivity** can be **disabled** when required.  \n\n**DR & feature flags**  \n- **DR-drill** **feature flag** shared across supported engine DR-drill flows.  \n\n**Engineering**  \n- **Rsbuild** config for **Rspack**.  \n- **Tests:** IAM governance; compute pages; **legacy addUser** marked for deletion.  \n\n## Already on the blog\n\nWe already cover **DAP/DR strategy**, **Oracle on GCP**, **SQL Server HA/migration**, and more in long-form posts. This note fills the gap: **“what did the console merge in the last two weeks?”** without duplicating those narratives.\n\n---\n\n*For exact behavior in your account, use in-product help and your Tessell support channel.*",
+    "publishedDate": "2026-04-22",
+    "draft": true,
+    "archived": false,
+    "headerFeatured": false,
+    "featured": false,
+    "blogCategoryRef": "662befebad639d6ff9eb3f42",
+    "blogTagsRefs": "67dddfff58184d6cd72bce7c, 6595bb0f98a5fee6eb7fa12f, 6595bb89ceddfaaf24dc8358"
+  },
+  "warnings": [
+    "No thumbnail image: blog cards use `thumbnailImage`. Set `thumbnailImageAssetRef` / `mainImageAssetRef` in frontmatter, env defaults, or use get_blog_image_asset_examples + Studio upload."
+  ],
+  "notes": [
+    "Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.",
+    "Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.",
+    "Authors: add in Studio unless you extend the tool."
+  ]
+}

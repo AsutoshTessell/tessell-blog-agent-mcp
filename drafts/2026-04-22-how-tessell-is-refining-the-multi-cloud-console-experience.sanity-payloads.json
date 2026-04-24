@@ -1,0 +1,641 @@
+{
+  "apiReady": {
+    "document": {
+      "_type": "blogPost",
+      "_id": "2751574c-06bb-4fd1-aee2-dfee3640dafb",
+      "name": "How Tessell Is Refining the Multi-Cloud Console Experience",
+      "slug": {
+        "_type": "slug",
+        "current": "how-tessell-is-refining-multi-cloud-console-experience"
+      },
+      "postBody": [
+        {
+          "_type": "block",
+          "_key": "dc08f26c1687",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "358660b8133c",
+              "text": "If you manage databases across more than one cloud, you know the feeling: a button that makes perfect sense on AWS might be meaningless — or worse, misleading — on Google Cloud. A policy toggle that works for PostgreSQL might behave differently for SQL Server. And a settings page that's fine 99% of the time can crash the one time your API returns an unexpected null.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "8409f93268a7",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "de847c910b78",
+              "text": "These aren't dramatic failures. They're the small, cumulative frustrations that slow teams down and erode trust in a platform. At Tessell, we've been investing in exactly these kinds of improvements — not headline features, but the kind of refinements that make a multi-cloud console feel ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "c3cac20de83d",
+              "text": "intentional",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "a59ab4d93a49",
+              "text": " rather than bolted together.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "8a78c94dfa97",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "63687b6f541c",
+              "text": "Here's what we've been working on.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "1078b707d085",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "224425404fa0",
+              "text": "Google Cloud Deserves Its Own Experience",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "4c553c1097ea",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "555d520474bb",
+              "text": "When we first brought GCP into the Tessell console, the natural starting point was to mirror the AWS and Azure workflows. That gets you most of the way — but \"most of the way\" isn't good enough for production teams. Google Cloud has its own infrastructure model, its own networking constructs, and its own set of supported operations. The console should reflect that.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "ff8f23eb7ba1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b7d5f9b312c0",
+              "text": "Over the past few weeks, we've made a series of targeted changes to ensure the GCP experience is ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "c83fb9482797",
+              "text": "clean and honest",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "20e9b29a301b",
+              "text": " — showing operators exactly what they can do, and nothing they can't.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "5fe0d34db037",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "6ef0539a7e36",
+              "text": "Validation that respects the platform.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "df5b0059ff33",
+              "text": " Certain precheck and feasibility steps that are valuable on AWS or Azure don't apply in GCP contexts. Rather than running them anyway and returning confusing results, we've disabled them where they don't add value. The provisioning flow stays focused on what actually matters for your GCP deployment.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "bacd86f6803d",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "bcc273884688",
+              "text": "Clone behavior aligned with reality.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "776bdfeb4960",
+              "text": " Clone refresh is a powerful feature — but it isn't supported for every engine on every cloud. On GCP, we've turned off clone refresh for engines where the platform doesn't support it, while keeping it available for Oracle, which has deeper integration with GCP infrastructure. The result: operators don't click a button only to hit an error five minutes later.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "a6f20a86c8b7",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "fc9e51ffae45",
+              "text": "Automation paths that make sense.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ca1954e9b174",
+              "text": " The \"Code\" button in the Tessell console offers quick access to infrastructure-as-code templates. For GCP, we've removed the Terraform option where it doesn't apply, so teams aren't directed toward an unsupported path. It's a small change, but it prevents wasted time and support tickets.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "12737169e5b3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f84fd1da1225",
+              "text": "Backup policy clarity.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "8ba2b97f7263",
+              "text": " For SQL Server running on GCP, we've removed the native backup RPO policy option from the UI. This aligns the console with what the platform actually supports today, rather than exposing a control that would silently do nothing.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "a93b2c43fed7",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "38ff9d995f82",
+              "text": "These aren't just UI cleanups — they're about ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "8b585e59ab98",
+              "text": "trust",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "307ea942d846",
+              "text": ". When an operator opens the Tessell console and sees an option, they should be confident it will work. That's the bar we're holding ourselves to across every cloud.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "8b68ee219849",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "0233627cf2fa",
+              "text": "SQL Server: Smarter Policy Controls",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "adb547322597",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "d1811ab18dc0",
+              "text": "Data Access Policies (DAP) are central to how Tessell customers manage disaster recovery, compliance, and data availability. For SQL Server specifically, the relationship between DAP and Point-in-Time Recovery (PITR) can be nuanced — PITR availability depends on your subscription tier, the region you're operating in, and how your environment is configured.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "d3e487efc56a",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "2f175d514948",
+              "text": "We've updated the console to be ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "9c34c488bf65",
+              "text": "aware of that context",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "fe4c1cd9a824",
+              "text": ".",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "0c12dc107b9f",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "186bac11982c",
+              "text": "Subscription and region-aware toggles.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "a2c20c436989",
+              "text": " When you configure DAP settings for a SQL Server database, the console now checks whether PITR is actually available for your specific subscription and region. If it isn't, the relevant toggles are either disabled or adjusted — rather than presenting options that would fail at execution time. This is the kind of intelligence that saves hours of troubleshooting.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "bc4447120f5c",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "9a06b850ff35",
+              "text": "Guardrails where they matter.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "6bb16be98547",
+              "text": " In cases where PITR cannot support a particular DAP configuration, the console now applies explicit restrictions. Instead of letting you save an invalid combination and discovering the problem during a recovery scenario — the worst possible time to find out — the UI prevents it upfront.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "0acfbc726a18",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "46c872e716d9",
+              "text": "Collation handling in clone workflows.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ecd0418b003b",
+              "text": " When cloning a SQL Server database, the collation setting can be critical. We've added the ability to ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "53ecfa376e7a",
+              "text": "pre-fill and lock",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "ca2af282fcd6",
+              "text": " the collation field during the clone workflow when the source database has a specific collation requirement. This removes a common source of errors in multi-step clone operations, especially for teams managing standardized environments.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "a66768ad27bb",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ce491f131683",
+              "text": "The Stability That Day-Two Operations Demand",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "efcdd689f2ae",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "08be1c94bdd1",
+              "text": "Building features gets the headlines. But for teams running databases in production, ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "6dfffe81c846",
+              "text": "stability in the day-two experience",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "8c6b4b9fbf33",
+              "text": " — settings pages, monitoring dashboards, provisioning feedback — is what actually determines whether a platform earns long-term trust.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "adc58fa0aecb",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "24f048efd982",
+              "text": "Maintenance window resilience.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "66370f0522e3",
+              "text": " We fixed a crash that occurred on the ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "cc06ca9702aa",
+              "text": "DB Service → Settings → Maintenance Window",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "35e185dcfa05",
+              "text": " page when the API returned a null ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "5c0d30df9c43",
+              "text": "maintenanceWindow",
+              "marks": [
+                "code"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "609dd5afaa32",
+              "text": " value. It's the kind of edge case that rarely happens — until it does, and an operator can't access their settings. That's resolved now, and the page handles empty or unexpected responses gracefully.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "d24fd039d849",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f2b6459f5886",
+              "text": "Monitoring reliability.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "619dd9f8ca75",
+              "text": " Several monitoring-related issues were addressed to ensure that dashboards and alert views remain accurate and responsive. When you're troubleshooting a production incident at 2 AM, the last thing you need is a monitoring page that's also misbehaving.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "cfc3d6b660fa",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "e9a2439672c3",
+              "text": "Provisioning visibility.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "de3f8558a364",
+              "text": " During provisioning, the console now surfaces image status information more clearly, so operators can see exactly where their workload is in the preparation pipeline. It's a small addition that reduces \"is it working?\" anxiety during longer provisioning cycles.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "b72774f58e53",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "55946936c204",
+              "text": "Access and networking refinements.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "5b4dd1db99fa",
+              "text": " For teams managing network topology, we've enabled access policies for GCP availability machines where appropriate, and added the ability to disable private connectivity toggles on Azure when your architecture requires it. These are precise controls for teams with specific networking requirements.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "8c8c16b01117",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "3d19a762bcda",
+              "text": "What This Means for You",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "bb6e7d0b8a0d",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "a2483b63b843",
+              "text": "None of these changes are going to make a press release. But if you're a DBA or a platform engineer who spends your day inside the Tessell console — managing databases across AWS, Azure, and Google Cloud — you'll notice the difference. Fewer dead ends. Fewer misleading options. Fewer moments of \"wait, why isn't this working?\"",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "31d75815da02",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f9babf538191",
+              "text": "At Tessell, we believe the best multi-cloud experience isn't just about supporting every cloud. It's about making each cloud feel native, each workflow feel intentional, and each control feel trustworthy. That's what we're building toward — one improvement at a time.",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "postSummary": "As organizations run databases across AWS, Azure, and Google Cloud, the console they rely on every day needs to keep pace. We've been shipping targeted improvements to Tessell's console — smarter GCP workflows, tighter SQL Server policy controls, and stability fixes — so operators spend less time second-guessing the UI and more time focused on what matters.",
+      "description": "A look at recent Tessell console improvements across Google Cloud, SQL Server, and day-two operations — written for the teams who live inside the product every day.",
+      "seo": {
+        "title": "Multi-cloud console improvements at Tessell",
+        "metaDescription": "Tessell refines its multi-cloud console: smarter GCP workflows, SQL Server DAP/PITR controls, and stability fixes for teams managing databases at scale."
+      },
+      "publishedDate": "2026-04-22",
+      "draft": true,
+      "archived": false,
+      "headerFeatured": false,
+      "featured": false,
+      "blogCategory": {
+        "_type": "reference",
+        "_ref": "662befebad639d6ff9eb3f42"
+      },
+      "blogTags": [
+        {
+          "_type": "reference",
+          "_ref": "67dddfff58184d6cd72bce7c",
+          "_key": "9a9b5ea6e0f6"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bb0f98a5fee6eb7fa12f",
+          "_key": "c22a1fcf6f92"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bb89ceddfaaf24dc8358",
+          "_key": "859f88d2d818"
+        },
+        {
+          "_type": "reference",
+          "_ref": "678ede30f80842c9a5f4ebf3",
+          "_key": "7048771aa1ff"
+        }
+      ]
+    },
+    "mutationHint": "POST { \"mutations\": [ { \"createOrReplace\": <apiReady.document> } ] } to https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset> with Authorization: Bearer <SANITY_TOKEN>. Or use @sanity/client createOrReplace."
+  },
+  "studioFriendly": {
+    "blogPostTitle": "How Tessell Is Refining the Multi-Cloud Console Experience",
+    "slug": "how-tessell-is-refining-multi-cloud-console-experience",
+    "postSummary": "As organizations run databases across AWS, Azure, and Google Cloud, the console they rely on every day needs to keep pace. We've been shipping targeted improvements to Tessell's console — smarter GCP workflows, tighter SQL Server policy controls, and stability fixes — so operators spend less time second-guessing the UI and more time focused on what matters.",
+    "description": "A look at recent Tessell console improvements across Google Cloud, SQL Server, and day-two operations — written for the teams who live inside the product every day.",
+    "seoTitle": "Multi-cloud console improvements at Tessell",
+    "seoMetaDescription": "Tessell refines its multi-cloud console: smarter GCP workflows, SQL Server DAP/PITR controls, and stability fixes for teams managing databases at scale.",
+    "postBody_markdown": "If you manage databases across more than one cloud, you know the feeling: a button that makes perfect sense on AWS might be meaningless — or worse, misleading — on Google Cloud. A policy toggle that works for PostgreSQL might behave differently for SQL Server. And a settings page that's fine 99% of the time can crash the one time your API returns an unexpected null.\n\nThese aren't dramatic failures. They're the small, cumulative frustrations that slow teams down and erode trust in a platform. At Tessell, we've been investing in exactly these kinds of improvements — not headline features, but the kind of refinements that make a multi-cloud console feel **intentional** rather than bolted together.\n\nHere's what we've been working on.\n\n## Google Cloud Deserves Its Own Experience\n\nWhen we first brought GCP into the Tessell console, the natural starting point was to mirror the AWS and Azure workflows. That gets you most of the way — but \"most of the way\" isn't good enough for production teams. Google Cloud has its own infrastructure model, its own networking constructs, and its own set of supported operations. The console should reflect that.\n\nOver the past few weeks, we've made a series of targeted changes to ensure the GCP experience is **clean and honest** — showing operators exactly what they can do, and nothing they can't.\n\n**Validation that respects the platform.** Certain precheck and feasibility steps that are valuable on AWS or Azure don't apply in GCP contexts. Rather than running them anyway and returning confusing results, we've disabled them where they don't add value. The provisioning flow stays focused on what actually matters for your GCP deployment.\n\n**Clone behavior aligned with reality.** Clone refresh is a powerful feature — but it isn't supported for every engine on every cloud. On GCP, we've turned off clone refresh for engines where the platform doesn't support it, while keeping it available for Oracle, which has deeper integration with GCP infrastructure. The result: operators don't click a button only to hit an error five minutes later.\n\n**Automation paths that make sense.** The \"Code\" button in the Tessell console offers quick access to infrastructure-as-code templates. For GCP, we've removed the Terraform option where it doesn't apply, so teams aren't directed toward an unsupported path. It's a small change, but it prevents wasted time and support tickets.\n\n**Backup policy clarity.** For SQL Server running on GCP, we've removed the native backup RPO policy option from the UI. This aligns the console with what the platform actually supports today, rather than exposing a control that would silently do nothing.\n\nThese aren't just UI cleanups — they're about **trust**. When an operator opens the Tessell console and sees an option, they should be confident it will work. That's the bar we're holding ourselves to across every cloud.\n\n## SQL Server: Smarter Policy Controls\n\nData Access Policies (DAP) are central to how Tessell customers manage disaster recovery, compliance, and data availability. For SQL Server specifically, the relationship between DAP and Point-in-Time Recovery (PITR) can be nuanced — PITR availability depends on your subscription tier, the region you're operating in, and how your environment is configured.\n\nWe've updated the console to be **aware of that context**.\n\n**Subscription and region-aware toggles.** When you configure DAP settings for a SQL Server database, the console now checks whether PITR is actually available for your specific subscription and region. If it isn't, the relevant toggles are either disabled or adjusted — rather than presenting options that would fail at execution time. This is the kind of intelligence that saves hours of troubleshooting.\n\n**Guardrails where they matter.** In cases where PITR cannot support a particular DAP configuration, the console now applies explicit restrictions. Instead of letting you save an invalid combination and discovering the problem during a recovery scenario — the worst possible time to find out — the UI prevents it upfront.\n\n**Collation handling in clone workflows.** When cloning a SQL Server database, the collation setting can be critical. We've added the ability to **pre-fill and lock** the collation field during the clone workflow when the source database has a specific collation requirement. This removes a common source of errors in multi-step clone operations, especially for teams managing standardized environments.\n\n## The Stability That Day-Two Operations Demand\n\nBuilding features gets the headlines. But for teams running databases in production, **stability in the day-two experience** — settings pages, monitoring dashboards, provisioning feedback — is what actually determines whether a platform earns long-term trust.\n\n**Maintenance window resilience.** We fixed a crash that occurred on the **DB Service → Settings → Maintenance Window** page when the API returned a null `maintenanceWindow` value. It's the kind of edge case that rarely happens — until it does, and an operator can't access their settings. That's resolved now, and the page handles empty or unexpected responses gracefully.\n\n**Monitoring reliability.** Several monitoring-related issues were addressed to ensure that dashboards and alert views remain accurate and responsive. When you're troubleshooting a production incident at 2 AM, the last thing you need is a monitoring page that's also misbehaving.\n\n**Provisioning visibility.** During provisioning, the console now surfaces image status information more clearly, so operators can see exactly where their workload is in the preparation pipeline. It's a small addition that reduces \"is it working?\" anxiety during longer provisioning cycles.\n\n**Access and networking refinements.** For teams managing network topology, we've enabled access policies for GCP availability machines where appropriate, and added the ability to disable private connectivity toggles on Azure when your architecture requires it. These are precise controls for teams with specific networking requirements.\n\n## What This Means for You\n\nNone of these changes are going to make a press release. But if you're a DBA or a platform engineer who spends your day inside the Tessell console — managing databases across AWS, Azure, and Google Cloud — you'll notice the difference. Fewer dead ends. Fewer misleading options. Fewer moments of \"wait, why isn't this working?\"\n\nAt Tessell, we believe the best multi-cloud experience isn't just about supporting every cloud. It's about making each cloud feel native, each workflow feel intentional, and each control feel trustworthy. That's what we're building toward — one improvement at a time.",
+    "publishedDate": "2026-04-22",
+    "draft": true,
+    "archived": false,
+    "headerFeatured": false,
+    "featured": false,
+    "blogCategoryRef": "662befebad639d6ff9eb3f42",
+    "blogTagsRefs": "67dddfff58184d6cd72bce7c, 6595bb0f98a5fee6eb7fa12f, 6595bb89ceddfaaf24dc8358, 678ede30f80842c9a5f4ebf3"
+  },
+  "warnings": [
+    "No thumbnail image: blog cards use `thumbnailImage`. Set `thumbnailImageAssetRef` / `mainImageAssetRef` in frontmatter, env defaults, or use get_blog_image_asset_examples + Studio upload."
+  ],
+  "notes": [
+    "Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.",
+    "Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.",
+    "Authors: add in Studio unless you extend the tool."
+  ]
+}
