@@ -38,21 +38,29 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    
    For each feature mentioned, naturally weave in: what it is, why it matters, and what the reader gets — but don't force a rigid template. Use rich paragraphs, not bullet-only lists.
 
-7. **Save, convert, publish**  
+7. **Write a Platform Update post for skipped items**  
+   After the primary post(s), create a secondary **"What's New in the Tessell Console — [Month Year]"** post covering items that were skipped or too small for standalone posts (GCP guard-rails, stability fixes, build improvements, minor UI tweaks). See the style guide's "Secondary Platform Update Post for Skipped Items" section for rules.  
+   - **Category:** Database Management. **Tone:** Platform Update pattern.  
+   - **Mark `draft: true`** so marketing can decide whether to publish or rework.  
+   - **Exclude** pure test additions.  
+   - **Minimum 3 skipped items** needed; otherwise fold into the primary post as "Also in this release."
+
+8. **Save, convert, publish**  
    - **`save_blog_draft`** or write to `tessell-blog-agent-mcp/drafts`.
    - **`markdown_to_sanity_blog`** → save `*.sanity-payloads.json`.
    - **`publish_blog_to_sanity`**: **`dryRun: true`** first, then **`dryRun: false`**.
    - Use **`generateCardImageFromContent: true`** if no thumbnail image.
+   - Publish **both** the primary post(s) and the platform update post.
    - Note: **authors** may need to be added in Studio.
 
 ## Reply expectations
 
-Summarize: **content strategy decision** (one post / multiple / what was skipped and why), **what changed in the UI**, **what was missing from existing blogs**, **category/tag refs**, **image handling**, **draft path(s)**, and **publish results** (dry-run vs live).
+Summarize: **content strategy decision** (one post / multiple / what was skipped and why), **what changed in the UI**, **what was missing from existing blogs**, **category/tag refs**, **image handling**, **draft path(s)**, **platform update post** (what it covers), and **publish results** (dry-run vs live for all posts).
 
 ---
 
 ## Quick prompt (copy-paste)
 
 ```text
-Use the Tessell blog MCP: first read get_blog_style_guide and get_published_blog_samples to learn the voice, patterns, and content strategy; then scan tessell-ui git (~15 days) vs published blogs; decide what deserves a post vs what to skip, one post or multiple; find the published sample most similar to your content and mirror its structure; save under tessell-blog-agent-mcp/drafts, convert, publish (dry run then live), generateCardImageFromContent if no image — use my absolute tessell-ui repoPath.
+Use the Tessell blog MCP: first read get_blog_style_guide and get_published_blog_samples to learn the voice, patterns, and content strategy; then scan tessell-ui git (~15 days) vs published blogs; decide what deserves a post vs what to skip, one post or multiple; find the published sample most similar to your content and mirror its structure; also create a "What's New in the Tessell Console" platform update post for skipped items (so marketing has visibility); save all under tessell-blog-agent-mcp/drafts, convert, publish (dry run then live), generateCardImageFromContent if no image — use my absolute tessell-ui repoPath.
 ```

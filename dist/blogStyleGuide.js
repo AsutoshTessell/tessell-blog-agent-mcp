@@ -115,6 +115,28 @@ Before writing, analyze the git changes and ask:
 - Build improvements (mention as "engineering velocity" briefly at the end)
 - Minor UI tweaks (consolidate into a bigger story)
 
+## Secondary "Platform Update" Post for Skipped Items
+
+After creating the primary blog post(s), ALWAYS create a secondary **"What's New in the Tessell Console"** post that covers the items that were skipped or deemed too small for a standalone post. This serves the marketing team as an internal reference and optionally publishable update.
+
+**Why:** Even items that aren't blog-worthy on their own (GCP guard-rail tweaks, stability fixes, build tooling, minor UI improvements) are valuable for the marketing and product team to know about. They can decide whether to publish, rework, or use it as briefing material.
+
+**Rules for the Platform Update post:**
+- **Title pattern:** "What's New in the Tessell Console — [Month Year]" (e.g. "What's New in the Tessell Console — April 2026")
+- **Category:** Database Management (broadest fit for cross-cutting platform changes)
+- **Tone:** Platform Update pattern — accessible, grouped by theme, each item gets 2-4 sentences of narrative context (not raw commit messages)
+- **Structure:**
+  1. Opening: Brief intro about continuous platform improvements
+  2. Themed sections (e.g. "Multi-Cloud Refinements", "Reliability & Stability", "Under the Hood") — each with narrative context explaining what changed and why it matters
+  3. Closing: Forward-looking statement about upcoming improvements
+- **What to include:** GCP guard-rails, stability fixes, networking improvements, build/performance work, minor UI refinements — anything that was "skipped" or "gray area" from the primary post decision
+- **What to still exclude:** Pure test additions (unit tests) — even marketing doesn't need to know about test file additions
+- **Framing:** Translate every change into reader-facing language. Never use commit messages, PR numbers, or internal jargon.
+  - ❌ "Disable prechecks and feasibility checks UI for GCP cloud"
+  - ✅ "The console now only surfaces pre-check and feasibility controls on clouds where they're fully supported — reducing confusion for GCP users"
+- **Mark as draft:** Set \`draft: true\` in the YAML frontmatter so marketing knows it's their call whether to publish or rework
+- **Minimum bar:** At least 3 skipped items needed to justify a platform update post. If fewer than 3 items were skipped, fold them into the primary post as a brief "Also in this release" section instead
+
 ## Section Structure: Match the Pattern to the Content
 
 Published Tessell blogs use DIFFERENT structures depending on the type of content. Do NOT force a single rigid pattern on every post. Instead, study the published blog samples you receive and pick the structure that fits your content best.
