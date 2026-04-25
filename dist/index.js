@@ -30,7 +30,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         tools: [
             {
                 name: 'read_tessell_ui_features',
-                description: 'Scans the git history of the tessell-ui repository to find recent feature commits.',
+                description: 'Scans the git history of the tessell-ui repository to find recent feature commits. Returns commit messages with short descriptions. Use the output alongside get_blog_style_guide to decide what merits a blog post, what to skip, and whether to create one post or multiple.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -48,7 +48,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_published_blogs',
-                description: 'Lists blog posts using the same Sanity query as localhost:3000/blog (BLOG_POSTS_QUERY). Loads `.env` in this repo first (copy from `.env.example`), then optional TESSELL_WEBSITE_* paths, then sibling tessell-web/tessell-website/.env. Uses @sanity/client.',
+                description: 'Lists all published blog posts (title, slug, summary, category). Use this to: (1) avoid duplicating existing content, (2) analyze which categories and topics are well-covered vs underserved, (3) understand what Tessell considers blog-worthy, (4) decide whether your new content fits an existing post\'s topic or needs a fresh angle. Study titles and summaries to match the naming style.',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -144,7 +144,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_blog_style_guide',
-                description: 'Returns the Tessell blog writing style guide — tone, structure, title patterns, engagement techniques, and anti-patterns — derived from analyzing published posts. Call this BEFORE writing any draft so the output matches the quality and voice of existing Tessell blogs.',
+                description: 'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, and how to learn from published blog patterns. Call this BEFORE writing any draft.',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -152,7 +152,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_published_blog_samples',
-                description: 'Fetches 3 recent published blog posts with FULL body text from Sanity. Use this to study how existing posts are written — their tone, paragraph flow, headings, and engagement — before writing a new draft. Pair with get_blog_style_guide.',
+                description: 'Fetches well-written published blog posts with FULL body text from Sanity. Study them to learn: how sections are structured (What → Why → How), how subheadings tell a story, how each feature is explained with context and business impact, how openings hook readers, and how closings deliver a takeaway. Write your draft to match this quality. Also use these to judge what level of content Tessell publishes — if the changes you have don\'t meet this bar, consolidate or skip.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -425,7 +425,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     {
                         type: 'text',
                         text: JSON.stringify({
-                            instruction: 'Study how these published posts are written — their opening hooks, paragraph flow, heading style, use of bold, customer examples, and closing takeaways. Write your draft in the SAME voice and structure. Do NOT write bullet-only release notes.',
+                            instruction: [
+                                'These are real published Tessell blog posts. Study them to understand the PATTERNS Tessell uses:',
+                                '',
+                                '1. IDENTIFY each post\'s pattern: Is it an announcement, a problem→solution narrative, a practitioner deep dive, or a platform update? Note the structure.',
+                                '2. FIND the sample(s) most similar to what you are about to write. Mirror that structure.',
+                                '3. NOTE how each post handles: opening hooks, section headings (story-driven vs label-driven), paragraph-to-bullet ratio, customer quotes, closing takeaways.',
+                                '4. DO NOT force a single rigid pattern. If your content is an announcement, write like the announcement sample. If it\'s a technical update, write like the practitioner sample.',
+                                '5. IMPROVE where you can — better hook, clearer examples, stronger close — but stay consistent with the brand voice.',
+                            ].join('\n'),
                             samples: formatted,
                         }, null, 2),
                     },

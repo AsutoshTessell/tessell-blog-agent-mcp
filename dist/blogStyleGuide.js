@@ -72,6 +72,142 @@ export const BLOG_STYLE_GUIDE = `
 ## SEO Title & Meta Description
 - **SEO title:** Benefit-driven, 50-60 chars. Include the main keyword naturally.
 - **Meta description:** 140-160 chars, action-oriented, includes what the reader gets.
+
+---
+
+# Content Strategy: What to Write, When, and How Many Posts
+
+## Deciding: One Post or Multiple Posts?
+
+Before writing, analyze the git changes and ask:
+
+**Create SEPARATE posts when:**
+- Changes span **completely different audiences** (e.g. a GCP networking change and a SQL Server backup policy — a GCP DBA doesn't care about SQL Server collation).
+- A single change is **substantial enough** to justify its own deep dive (e.g. a major new workflow, a new cloud supported, a new engine).
+- Published blogs show that Tessell typically covers **one theme per post** (PCI certification = 1 post, CDC + Fabric = 1 post, Data Lineage = 1 post).
+
+**Create ONE combined post when:**
+- Changes are **thematically related** (e.g. multiple GCP refinements → one "GCP experience" post).
+- Individual changes are too small to stand on their own (a null-fix alone isn't a blog post).
+- The changes together tell a **cohesive story** for a single audience (e.g. "multi-cloud console refinements" for platform engineers).
+
+**Rule of thumb:** If you can write a compelling title and opening hook for a single post that covers all the changes naturally — keep it as one. If the title would have to be vague ("Various Updates") to fit everything — split.
+
+## What's Worth a Blog Post vs What Isn't
+
+**WRITE a blog post for:**
+- New cloud support, new engine support, new integration (CDC, Fabric, etc.)
+- Security milestones (certifications, compliance)
+- Workflow improvements that change how users interact with the product
+- Performance improvements with measurable impact
+- Features that solve a pain point customers have voiced
+- Multi-cloud parity improvements (GCP catching up to AWS/Azure)
+
+**DON'T write a blog post for:**
+- Pure test additions (unit tests for existing features)
+- Internal build tooling changes (Rspack, Rsbuild) unless there's a user-facing angle
+- Bug fixes that are embarrassing to highlight (crashes, null checks)
+- Feature flag additions without user-facing context
+- Refactors, code cleanup, or dependency updates
+
+**GRAY AREA — mention briefly within a larger post but don't lead with:**
+- Stability fixes (mention as "reliability investments" in a broader post)
+- Build improvements (mention as "engineering velocity" briefly at the end)
+- Minor UI tweaks (consolidate into a bigger story)
+
+## Section Structure: Match the Pattern to the Content
+
+Published Tessell blogs use DIFFERENT structures depending on the type of content. Do NOT force a single rigid pattern on every post. Instead, study the published blog samples you receive and pick the structure that fits your content best.
+
+**Common patterns found in published posts:**
+
+**Announcement / Milestone** (e.g. PCI DSS certification, Gartner recognition):
+- Open with the news: "We're excited to announce…"
+- "Why it matters" section with industry context
+- What's new and how it maps to the product
+- Benefits for specific audiences (fintech, public sector, etc.)
+- Philosophy / forward-looking close
+
+**Problem → Solution narrative** (e.g. CDC + Fabric, Data Lineage):
+- Open with the reader's pain point or a relatable question
+- Explain the concept (with analogies if helpful)
+- Show how Tessell addresses it
+- Customer quote or social proof
+- Closing takeaway
+
+**Practitioner deep dive** (e.g. Oracle Migration, Oracle on GCP):
+- "Why this guide exists" — establish credibility
+- Scenario-based sections ("Common Migration Scenarios", "Pre-Migration: Where Migrations Are Won or Lost")
+- Detailed technical walkthrough with enterprise context
+- Real customer examples woven in
+
+**Platform update / What's new** (e.g. multi-cloud console improvements):
+- Open with the reader's daily experience / frustration
+- Group changes by theme (each theme gets narrative + specifics)
+- Explain business impact, not just the change
+- Close with the bigger vision
+
+**How to choose:** Look at the published samples. Find the one closest to what you're writing. Mirror its structure. If none match exactly, combine elements — but always ensure each section has narrative context, not just bullet points.
+
+**For any pattern, each feature or change mentioned should still answer three implicit questions** (weave them into the narrative naturally — don't use them as literal subheadings):
+- What is this?
+- Why does it matter to the reader?
+- What's the outcome?
+
+## Understanding Tessell's Audience and Domain
+
+**Primary readers:**
+- **DBAs and database engineers** managing Oracle, SQL Server, PostgreSQL, MySQL across clouds
+- **Platform/infrastructure engineers** building and operating multi-cloud database estates
+- **CTOs, VPs of Engineering, IT leaders** evaluating or expanding Tessell adoption
+- **Compliance and security teams** concerned with governance, DR, and data protection
+
+**What they care about:**
+- Reducing manual toil in database operations
+- Multi-cloud consistency (same experience on AWS, Azure, GCP)
+- Data protection, disaster recovery, compliance confidence
+- Cost reduction vs. self-managed or legacy managed services
+- Production-grade reliability (uptime, maintenance, monitoring)
+
+**How published Tessell blogs serve them:**
+- **Deep dives** for practitioners (Oracle migration guide, SQL Server HA)
+- **Announcements** for leadership (Gartner recognition, Series B, certifications)
+- **Integration stories** for architects (CDC + Fabric, FSx for ONTAP)
+- **Platform updates** for operators (what's new in the console experience)
+
+When writing, always ask: "Which of these audiences am I writing for?" and "What do they get from reading this?"
+
+## Learning from Published Blog Patterns (PRIMARY — do this before writing)
+
+The published posts ARE your strategy. Don't rely on generic rules — derive your approach from what's actually on the blog.
+
+When you receive the full list of published posts (from get_published_blogs), systematically analyze:
+
+**1. Content landscape:**
+- Which categories have the most posts? Which are underserved?
+- When was the last post in each relevant category?
+- What topics have been covered deeply vs lightly?
+
+**2. Quality and engagement bar:**
+- What titles get the most descriptive, engaging summaries?
+- How long are the summaries? What language do they use?
+- Do similar posts exist for the changes you're writing about? If so, what angle did they take?
+
+**3. Tone per category:**
+- Announcements → celebratory, "We're excited…", forward-looking
+- Oracle / SQL Server / engine-specific → practitioner-focused, detailed, technical credibility
+- Database Management → concept-explaining, analogy-rich, accessible
+- Governance → compliance-focused, trust-building, regulatory context
+
+**4. Pattern matching for new content:**
+- Find the 1-2 published posts MOST SIMILAR to what you're about to write
+- Mirror their structure, heading style, depth, and tone
+- Improve where you can (better hook, clearer examples, stronger close) but stay consistent with the brand
+
+**5. Gap analysis:**
+- If published blogs have deep content on Oracle and PostgreSQL but nothing on SQL Server DAP — that's a gap worth filling
+- If GCP was recently covered in a "Fully Managed Oracle on GCP" post — a new GCP post should take a DIFFERENT angle (e.g. console experience, not deployment)
+- If there are many Announcements but few practitioner guides — lean toward the practitioner style for technical changes
 `;
 /**
  * Preferred slugs: well-written published posts that showcase the Tessell blog voice.

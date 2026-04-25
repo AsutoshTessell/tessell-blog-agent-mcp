@@ -1,0 +1,559 @@
+{
+  "apiReady": {
+    "document": {
+      "_type": "blogPost",
+      "_id": "f4ee076f-578b-485d-b12b-625a5a35e23a",
+      "name": "Smarter SQL Server Policies and Clones with Tessell",
+      "slug": {
+        "_type": "slug",
+        "current": "smarter-sql-server-policies-and-clones-with-tessell"
+      },
+      "postBody": [
+        {
+          "_type": "block",
+          "_key": "96c0622229d8",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "a6a302a5b3bc",
+              "text": "If you've ever configured a disaster recovery policy for a SQL Server database, you've probably had this experience: you carefully set up your Data Access Policy, pick your Point-in-Time Recovery settings, save — and then discover days or weeks later that PITR isn't actually available in your subscription or region. The policy looked valid in the UI. The backend quietly disagreed.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "6b87f40a19e9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "c93b1caa3708",
+              "text": "It's the kind of mismatch that erodes trust. Not because the platform can't do what you need — but because the console didn't tell you what it couldn't do.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "2e33543b41f3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "495b8be5cc8e",
+              "text": "At Tessell, we've been closing exactly these gaps. Our recent improvements to the SQL Server experience connect Data Access Policies directly to real-world PITR availability, and bring collation awareness into the clone workflow — two areas where SQL Server teams have historically spent more time debugging configuration than they should.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "767a6a294893",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b934b2889c1e",
+              "text": "When Policies Meet Reality",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "589ea5b853a3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "44665ef7f621",
+              "text": "Data Access Policies (DAP) are how Tessell customers manage data availability, disaster recovery, and compliance. A DAP defines where your data lives, how it's replicated, and how quickly you can recover it. For SQL Server, Point-in-Time Recovery is a critical piece of that puzzle — it determines whether you can restore to a specific moment before a failure or data corruption event.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "52eaaec037a2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "f2ee83c9f49d",
+              "text": "The challenge is that PITR availability isn't universal. It depends on your subscription tier, the Azure or AWS region you're operating in, and how your SQL Server environment is configured. Until now, the Tessell console presented PITR-related toggles regardless of whether they would actually work for your specific setup.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "1aef113c171e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b939618d6f3f",
+              "text": "That's changed.",
+              "marks": [
+                "strong"
+              ]
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "2f0b50c8d4f9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "bbc70638ee60",
+              "text": "The console now checks your subscription and region context before presenting DAP options. If PITR isn't available for your environment, the relevant toggles are either adjusted or disabled — with clear messaging about why. No more saving a policy that looks valid but can't execute when you need it most.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "678b592d786d",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "cca799181950",
+              "text": "This matters because disaster recovery isn't something you test casually. Teams configure DAP policies during initial setup, then rely on them for months — sometimes years — before a real recovery scenario occurs. Discovering at that moment that your PITR policy was never going to work is the worst possible outcome. By surfacing these constraints at configuration time, we're moving the failure point from \"during the incident\" to \"during the setup\" — where it's cheap to fix and easy to adjust.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "8b818ab107c3",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "e8d6b629a977",
+              "text": "Guardrails, Not Roadblocks",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "e6c11c347db7",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "96234b5f0be4",
+              "text": "It would be easy to solve this problem by simply removing options. But that's not what database teams need. You need flexibility within your environment's real constraints.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "feaba4bebeeb",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "fbb6b5f9b8f8",
+              "text": "That's why we've implemented restriction-based guardrails rather than blanket disabling. When PITR can't support a particular DAP configuration — say, a cross-region backup schedule that requires PITR capabilities your current subscription doesn't include — the console prevents that specific combination. But it still lets you configure everything else. The goal is to make invalid states impossible to save, without limiting the valid configurations you can create.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "e2fa7c7f691e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "3f7238d729ef",
+              "text": "Think of it as the difference between a GPS that says \"road closed, rerouting\" versus one that just turns off. We want to keep you moving, on a path that actually works.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "e31c4bc439bd",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "479aea47a483",
+              "text": "Cloning Without the Collation Guessing Game",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "74b635f20b63",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "e24b6bc735c0",
+              "text": "Anyone who has managed SQL Server environments at scale knows that collation isn't just a setting — it's a compatibility contract. When two databases use different collations, string comparisons, sorting, and even basic queries can behave differently. In a clone workflow, getting the collation wrong means your clone doesn't faithfully represent your production environment — which defeats the purpose of cloning in the first place.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "02176b5ea46e",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "cf5d76077d23",
+              "text": "Previously, the Tessell clone workflow for SQL Server required manual collation entry. It was one more field to fill, one more thing to remember, and one more opportunity for a subtle mismatch that wouldn't surface until a query returned unexpected results.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "f2b8add64576",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "19fa2ff42ec0",
+              "text": "We've updated the workflow to ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "2345fdb07345",
+              "text": "automatically pre-fill the collation field",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "61b758a5dcac",
+              "text": " from the source database and ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "9c4112d8db44",
+              "text": "lock it",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "d446b8d454ee",
+              "text": " when the source has a specific collation requirement. This means:",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "a17938a94016",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "b9b1e3888ea3",
+              "text": "Clones match production by default.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "0e1265e19bdf",
+              "text": " You don't need to look up your source collation and type it in — the workflow carries it forward automatically.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "9fbace0386e9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "0e7a23f8bcca",
+              "text": "Standardized environments stay standard.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "46ac9c773161",
+              "text": " For teams that enforce collation consistency across development, staging, and production databases, the locked field prevents accidental deviation.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "073179810e3f",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "87bf0d76eb0b",
+              "text": "Less debugging, faster provisioning.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "a0c13ff3f728",
+              "text": " Removing a manual step that can introduce errors means your clones are ready to use sooner, with fewer \"why is this query behaving differently?\" investigations.",
+              "marks": []
+            }
+          ],
+          "listItem": "bullet",
+          "level": 1
+        },
+        {
+          "_type": "block",
+          "_key": "bbb0b66430c5",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "94f83401892b",
+              "text": "It's a small change in the UI — one field that now populates itself. But for SQL Server teams managing dozens or hundreds of clones, it eliminates a recurring source of friction.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "7a69aa545201",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "cc2dc8ebd510",
+              "text": "What This Means for SQL Server Teams",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "cb49c11b11a4",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "5632f1d469b2",
+              "text": "These improvements share a common philosophy: ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "7471e93cd741",
+              "text": "the console should understand your environment as well as you do.",
+              "marks": [
+                "strong"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "b6b11ee32f84",
+              "text": " When you configure a Data Access Policy, the toggles should reflect what's actually possible for your subscription and region. When you clone a database, the settings should carry forward from the source without manual re-entry.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "de05a8917027",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "4cd8dc0cee0a",
+              "text": "SQL Server has historically been one of the more nuanced engines to manage in the cloud — not because the database itself is difficult, but because the ecosystem around it (licensing, availability groups, collation rules, subscription tiers) creates a web of dependencies that generic tooling doesn't account for. These updates are part of our ongoing investment in making Tessell's SQL Server experience engine-aware, not just cloud-generic.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "e6f80a2bb263",
+          "style": "normal",
+          "markDefs": [
+            {
+              "_key": "df84ba3d41eb",
+              "_type": "link",
+              "href": "https://www.tessell.com/blog/sql-server-high-availability-how-and-why"
+            },
+            {
+              "_key": "1dcaa87262b2",
+              "_type": "link",
+              "href": "https://www.tessell.com/blog/sql-server-migration-using-distributed-availability-groups"
+            },
+            {
+              "_key": "8c4fc3b2e17f",
+              "_type": "link",
+              "href": "https://www.tessell.com/blog/tessell-for-sql-server-benchmark"
+            }
+          ],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "0157c17936a2",
+              "text": "We already cover ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "07e4b29faa5e",
+              "text": "SQL Server High-Availability",
+              "marks": [
+                "df84ba3d41eb"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "96e5647adb0c",
+              "text": ", ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "fea94c53b97f",
+              "text": "migration with Distributed Availability Groups",
+              "marks": [
+                "1dcaa87262b2"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "29899fea2270",
+              "text": ", and ",
+              "marks": []
+            },
+            {
+              "_type": "span",
+              "_key": "45999df0827a",
+              "text": "performance benchmarks",
+              "marks": [
+                "8c4fc3b2e17f"
+              ]
+            },
+            {
+              "_type": "span",
+              "_key": "d84d8af548b0",
+              "text": ". These console improvements are the Day 2 complement — making sure the database you've migrated and tuned continues to be easy to manage, protect, and clone as your environment evolves.",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "postSummary": "Configuring disaster recovery policies and cloning SQL Server databases shouldn't require guesswork. We've made Tessell's console aware of your subscription, region, and collation context — so the controls you see are the controls that actually work for your environment.",
+      "description": "How Tessell's latest SQL Server console improvements connect Data Access Policies to PITR availability and bring collation-aware cloning — reducing misconfiguration and saving time for SQL Server teams.",
+      "seo": {
+        "title": "SQL Server DAP & Clone Improvements in Tessell",
+        "metaDescription": "Tessell now ties SQL Server Data Access Policies to real PITR availability and pre-fills collation in clone workflows — fewer errors, faster setup."
+      },
+      "publishedDate": "2026-04-24",
+      "draft": true,
+      "archived": false,
+      "headerFeatured": false,
+      "featured": false,
+      "blogCategory": {
+        "_type": "reference",
+        "_ref": "6595ba6a4fc9a8154a463a7c"
+      },
+      "blogTags": [
+        {
+          "_type": "reference",
+          "_ref": "6595bdabeef1c6ae6d5f2259",
+          "_key": "ebfd9c7645b8"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bb0f98a5fee6eb7fa12f",
+          "_key": "c0c4120feccb"
+        },
+        {
+          "_type": "reference",
+          "_ref": "6595bd9c5ff43019af2b1983",
+          "_key": "d2a8fad9255a"
+        },
+        {
+          "_type": "reference",
+          "_ref": "65fb48927065955d0af7c16b",
+          "_key": "1b28da1ab946"
+        }
+      ]
+    },
+    "mutationHint": "POST { \"mutations\": [ { \"createOrReplace\": <apiReady.document> } ] } to https://<projectId>.api.sanity.io/v2024-01-01/data/mutate/<dataset> with Authorization: Bearer <SANITY_TOKEN>. Or use @sanity/client createOrReplace."
+  },
+  "studioFriendly": {
+    "blogPostTitle": "Smarter SQL Server Policies and Clones with Tessell",
+    "slug": "smarter-sql-server-policies-and-clones-with-tessell",
+    "postSummary": "Configuring disaster recovery policies and cloning SQL Server databases shouldn't require guesswork. We've made Tessell's console aware of your subscription, region, and collation context — so the controls you see are the controls that actually work for your environment.",
+    "description": "How Tessell's latest SQL Server console improvements connect Data Access Policies to PITR availability and bring collation-aware cloning — reducing misconfiguration and saving time for SQL Server teams.",
+    "seoTitle": "SQL Server DAP & Clone Improvements in Tessell",
+    "seoMetaDescription": "Tessell now ties SQL Server Data Access Policies to real PITR availability and pre-fills collation in clone workflows — fewer errors, faster setup.",
+    "postBody_markdown": "If you've ever configured a disaster recovery policy for a SQL Server database, you've probably had this experience: you carefully set up your Data Access Policy, pick your Point-in-Time Recovery settings, save — and then discover days or weeks later that PITR isn't actually available in your subscription or region. The policy looked valid in the UI. The backend quietly disagreed.\n\nIt's the kind of mismatch that erodes trust. Not because the platform can't do what you need — but because the console didn't tell you what it couldn't do.\n\nAt Tessell, we've been closing exactly these gaps. Our recent improvements to the SQL Server experience connect Data Access Policies directly to real-world PITR availability, and bring collation awareness into the clone workflow — two areas where SQL Server teams have historically spent more time debugging configuration than they should.\n\n## When Policies Meet Reality\n\nData Access Policies (DAP) are how Tessell customers manage data availability, disaster recovery, and compliance. A DAP defines where your data lives, how it's replicated, and how quickly you can recover it. For SQL Server, Point-in-Time Recovery is a critical piece of that puzzle — it determines whether you can restore to a specific moment before a failure or data corruption event.\n\nThe challenge is that PITR availability isn't universal. It depends on your subscription tier, the Azure or AWS region you're operating in, and how your SQL Server environment is configured. Until now, the Tessell console presented PITR-related toggles regardless of whether they would actually work for your specific setup.\n\n**That's changed.**\n\nThe console now checks your subscription and region context before presenting DAP options. If PITR isn't available for your environment, the relevant toggles are either adjusted or disabled — with clear messaging about why. No more saving a policy that looks valid but can't execute when you need it most.\n\nThis matters because disaster recovery isn't something you test casually. Teams configure DAP policies during initial setup, then rely on them for months — sometimes years — before a real recovery scenario occurs. Discovering at that moment that your PITR policy was never going to work is the worst possible outcome. By surfacing these constraints at configuration time, we're moving the failure point from \"during the incident\" to \"during the setup\" — where it's cheap to fix and easy to adjust.\n\n## Guardrails, Not Roadblocks\n\nIt would be easy to solve this problem by simply removing options. But that's not what database teams need. You need flexibility within your environment's real constraints.\n\nThat's why we've implemented restriction-based guardrails rather than blanket disabling. When PITR can't support a particular DAP configuration — say, a cross-region backup schedule that requires PITR capabilities your current subscription doesn't include — the console prevents that specific combination. But it still lets you configure everything else. The goal is to make invalid states impossible to save, without limiting the valid configurations you can create.\n\nThink of it as the difference between a GPS that says \"road closed, rerouting\" versus one that just turns off. We want to keep you moving, on a path that actually works.\n\n## Cloning Without the Collation Guessing Game\n\nAnyone who has managed SQL Server environments at scale knows that collation isn't just a setting — it's a compatibility contract. When two databases use different collations, string comparisons, sorting, and even basic queries can behave differently. In a clone workflow, getting the collation wrong means your clone doesn't faithfully represent your production environment — which defeats the purpose of cloning in the first place.\n\nPreviously, the Tessell clone workflow for SQL Server required manual collation entry. It was one more field to fill, one more thing to remember, and one more opportunity for a subtle mismatch that wouldn't surface until a query returned unexpected results.\n\nWe've updated the workflow to **automatically pre-fill the collation field** from the source database and **lock it** when the source has a specific collation requirement. This means:\n\n- **Clones match production by default.** You don't need to look up your source collation and type it in — the workflow carries it forward automatically.\n- **Standardized environments stay standard.** For teams that enforce collation consistency across development, staging, and production databases, the locked field prevents accidental deviation.\n- **Less debugging, faster provisioning.** Removing a manual step that can introduce errors means your clones are ready to use sooner, with fewer \"why is this query behaving differently?\" investigations.\n\nIt's a small change in the UI — one field that now populates itself. But for SQL Server teams managing dozens or hundreds of clones, it eliminates a recurring source of friction.\n\n## What This Means for SQL Server Teams\n\nThese improvements share a common philosophy: **the console should understand your environment as well as you do.** When you configure a Data Access Policy, the toggles should reflect what's actually possible for your subscription and region. When you clone a database, the settings should carry forward from the source without manual re-entry.\n\nSQL Server has historically been one of the more nuanced engines to manage in the cloud — not because the database itself is difficult, but because the ecosystem around it (licensing, availability groups, collation rules, subscription tiers) creates a web of dependencies that generic tooling doesn't account for. These updates are part of our ongoing investment in making Tessell's SQL Server experience engine-aware, not just cloud-generic.\n\nWe already cover [SQL Server High-Availability](https://www.tessell.com/blog/sql-server-high-availability-how-and-why), [migration with Distributed Availability Groups](https://www.tessell.com/blog/sql-server-migration-using-distributed-availability-groups), and [performance benchmarks](https://www.tessell.com/blog/tessell-for-sql-server-benchmark). These console improvements are the Day 2 complement — making sure the database you've migrated and tuned continues to be easy to manage, protect, and clone as your environment evolves.",
+    "publishedDate": "2026-04-24",
+    "draft": true,
+    "archived": false,
+    "headerFeatured": false,
+    "featured": false,
+    "blogCategoryRef": "6595ba6a4fc9a8154a463a7c",
+    "blogTagsRefs": "6595bdabeef1c6ae6d5f2259, 6595bb0f98a5fee6eb7fa12f, 6595bd9c5ff43019af2b1983, 65fb48927065955d0af7c16b"
+  },
+  "warnings": [
+    "No thumbnail image: blog cards use `thumbnailImage`. Set `thumbnailImageAssetRef` / `mainImageAssetRef` in frontmatter, env defaults, or use get_blog_image_asset_examples + Studio upload."
+  ],
+  "notes": [
+    "Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.",
+    "Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.",
+    "Authors: add in Studio unless you extend the tool."
+  ]
+}
