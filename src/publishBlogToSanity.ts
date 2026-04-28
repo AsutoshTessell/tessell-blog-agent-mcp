@@ -90,7 +90,7 @@ export async function publishBlogPostToSanity(
   options?: {
     dataset?: string;
     dryRun?: boolean;
-    /** If true (or TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE=true), generates a PNG from title/postSummary and uploads when no thumbnail yet */
+    /** If true, generates a PNG from title/postSummary and uploads when no thumbnail yet */
     generateCardImageFromContent?: boolean;
   }
 ): Promise<PublishBlogPostResult> {
@@ -99,7 +99,9 @@ export async function publishBlogPostToSanity(
   const token = process.env.SANITY_TOKEN;
 
   if (!projectId) {
-    throw new Error('SANITY_PROJECT_ID is missing (load .env or set env).');
+    throw new Error(
+      'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example) or export SANITY_*.'
+    );
   }
 
   const slugCurrent =
@@ -136,9 +138,7 @@ export async function publishBlogPostToSanity(
 
   const docWithId = { ...document, _id: document._id ?? randomUUID() };
 
-  const wantCardImage =
-    Boolean(options?.generateCardImageFromContent) ||
-    process.env.TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE === 'true';
+  const wantCardImage = Boolean(options?.generateCardImageFromContent);
 
   let generatedImageAssetId: string | undefined;
   if (wantCardImage) {

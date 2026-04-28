@@ -116,6 +116,10 @@ Before writing, analyze the git changes and ask:
 - Build improvements (mention as "engineering velocity" briefly at the end)
 - Minor UI tweaks (consolidate into a bigger story)
 
+## Sanity \`draft\` flag for generated posts
+
+Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter. Marketing (or an explicit human step) clears the draft in Sanity when a post is approved for the live site. Do not set \`draft: false\` on generated posts unless the workflow explicitly says to publish immediately.
+
 ## Secondary "Platform Update" Post for Skipped Items
 
 After creating the primary blog post(s), ALWAYS create a secondary **"What's New in the Tessell Console"** post that covers the items that were skipped or deemed too small for a standalone post. This serves the marketing team as an internal reference and optionally publishable update.
@@ -135,7 +139,7 @@ After creating the primary blog post(s), ALWAYS create a secondary **"What's New
 - **Framing:** Translate every change into reader-facing language. Never use commit messages, PR numbers, or internal jargon.
   - ❌ "Disable prechecks and feasibility checks UI for GCP cloud"
   - ✅ "The console now only surfaces pre-check and feasibility controls on clouds where they're fully supported — reducing confusion for GCP users"
-- **Mark as draft:** Set \`draft: true\` in the YAML frontmatter so marketing knows it's their call whether to publish or rework
+- **Mark as draft:** Same rule as all generated posts — \`draft: true\` in YAML until marketing publishes (see **Sanity \`draft\` flag for generated posts** above).
 - **Minimum bar:** At least 3 skipped items needed to justify a platform update post. If fewer than 3 items were skipped, fold them into the primary post as a brief "Also in this release" section instead
 
 ## Section Structure: Match the Pattern to the Content

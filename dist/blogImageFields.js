@@ -13,7 +13,7 @@ function imageFromAssetRef(ref) {
     };
 }
 /**
- * blog listing cards use `thumbnailImage`; article hero + OG use `mainImage` (tessell-website BlogCard / BlogHeroHeader).
+ * Listing cards use `thumbnailImage`; article hero / OG use `mainImage`.
  * Frontmatter keys: thumbnailImageAssetRef, mainImageAssetRef (Sanity image **asset** `_ref`, e.g. image-abc…).
  * Env: TESSELL_DEFAULT_THUMBNAIL_IMAGE_ASSET_REF, TESSELL_DEFAULT_MAIN_IMAGE_ASSET_REF
  * If only one of main/thumb is set, the same asset is used for both so the grid and hero stay in sync.

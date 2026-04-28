@@ -1,0 +1,37 @@
+---
+description: Tessell / Sanity blog MCP — run the existing tools in order (no composite tools).
+alwaysApply: true
+---
+
+## Tessell blog MCP (Option A — built-in tools only)
+
+**When the user’s intent is Tessell CMS / Sanity blog work** (Tessell blog, publish blog drafts, `blog-mcp`, tessell-blog-agent, What’s New in the Tessell Console, etc.) — not unrelated “blog” tutorials — use the **tessell-blog-agent** MCP tools below **in this order** (skip a step only when not needed).
+
+Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (read for GROQ; write for publish). Set **`TESSELL_UI_REPO`** for git tools if you should not pass `repoPath` each time.
+
+### 1. Voice, strategy, samples, corpus, taxonomy, images (any order after the first two makes sense; run all that apply)
+
+1. **`get_blog_style_guide`** — tone, structure, one post vs multiple, platform-update strategy.
+2. **`get_published_blog_samples`** — learn structure (optional `count`).
+3. **`get_published_blogs`** — avoid duplicate topics; scan titles/summaries.
+4. **`get_blog_categories_and_tags`** — `_id`s for frontmatter.
+5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
+
+### 2. What changed in tessell-ui
+
+6. **`read_tessell_ui_features`** — `repoPath` (or env `TESSELL_UI_REPO`), `daysBack` (or `TESSELL_BLOG_DAYS_BACK` / default 15).
+
+### 3. Draft, convert, publish
+
+7. **`save_blog_draft`** — or create `.md` under `drafts/` manually (see `TESSELL_BLOG_DRAFTS_DIR`).
+8. **`markdown_to_sanity_blog`** — **always pass the absolute path** from step 7 as `markdownFilePath` (see chain below); writes `<stem>.sanity-payloads.json` beside the `.md` unless you only pass raw `markdown`.
+9. **`publish_blog_to_sanity`** — `dryRun: true` first; then `dryRun: false` with **`generateCardImageFromContent: true`** when there is no thumbnail yet.
+
+#### Chain `save_blog_draft` → `markdown_to_sanity_blog` (required for `.sanity-payloads.json`)
+
+- **`save_blog_draft`** responds with text like: `Successfully saved draft to: /absolute/path/to/tessell-blog-agent-mcp/drafts/your-slug.md`.
+- **Immediately next**, call **`markdown_to_sanity_blog`** with **`markdownFilePath`** set to that **same absolute `.md` path** (copy from the save response; do not omit or substitute raw `markdown` unless you intentionally skip writing JSON to disk).
+- Reason: only when `markdownFilePath` is provided does the MCP handler persist **`*.sanity-payloads.json`** next to the Markdown file. Passing only inline `markdown` returns payloads in the tool response but **does not create** the sibling JSON file.
+- If you skipped **`save_blog_draft`** and wrote the file by hand, still pass the **absolute path** to that file as `markdownFilePath`.
+
+MCP does not read the user’s typing pipeline; this rule tells the assistant **which tool names to invoke** for the full workflow.

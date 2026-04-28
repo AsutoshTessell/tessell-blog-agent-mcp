@@ -59,7 +59,7 @@ export async function publishBlogPostToSanity(document, options) {
     const dataset = options?.dataset ?? process.env.SANITY_DATASET ?? 'staging';
     const token = process.env.SANITY_TOKEN;
     if (!projectId) {
-        throw new Error('SANITY_PROJECT_ID is missing (load .env or set env).');
+        throw new Error('SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example) or export SANITY_*.');
     }
     const slugCurrent = document.slug && typeof document.slug === 'object' && 'current' in document.slug
         ? document.slug.current
@@ -86,8 +86,7 @@ export async function publishBlogPostToSanity(document, options) {
         token,
     });
     const docWithId = { ...document, _id: document._id ?? randomUUID() };
-    const wantCardImage = Boolean(options?.generateCardImageFromContent) ||
-        process.env.TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE === 'true';
+    const wantCardImage = Boolean(options?.generateCardImageFromContent);
     let generatedImageAssetId;
     if (wantCardImage) {
         const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');

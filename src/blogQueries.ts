@@ -1,5 +1,5 @@
 /**
- * Keep in sync with tessell-web/tessell-website/sanity/lib/queries.ts — BLOG_POSTS_QUERY
+ * BLOG_POSTS_QUERY — align with your Sanity schema / site GROQ if you evolve the blogPost type.
  * (blog listing page).
  */
 export const BLOG_POSTS_QUERY = `

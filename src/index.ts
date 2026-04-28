@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { createClient } from '@sanity/client';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -12,10 +11,12 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { BLOG_POSTS_QUERY } from './blogQueries.js';
 import { BLOG_CATEGORIES_QUERY, BLOG_TAGS_QUERY } from './blogTaxonomyQueries.js';
 import { BLOG_IMAGE_EXAMPLES_QUERY } from './blogImageExamplesQuery.js';
-import { loadTessellWebsiteEnv } from './loadEnv.js';
+import { loadSanityBlogEnv } from './loadEnv.js';
+import { createSanityReadClientWithMeta } from './sanityToolHelpers.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
 import {
@@ -27,8 +28,55 @@ import {
 
 const execAsync = promisify(exec);
 
-/** Load tessell-website/.env before reading tools (same SANITY_* as Next.js). */
-loadTessellWebsiteEnv();
+function sameAbsolutePath(a: string, b: string): boolean {
+  return path.normalize(path.resolve(a.trim())) === path.normalize(path.resolve(b.trim()));
+}
+
+/**
+ * Where `save_blog_draft` writes when `draftsFolderPath` is omitted:
+ * `TESSELL_BLOG_DRAFTS_DIR`, else `<this-repo>/drafts` (not tessell-web).
+ */
+function resolveDraftsFolderPath(explicit?: string | null): string {
+  const trimmed = explicit?.trim();
+  if (trimmed) return trimmed;
+  const fromEnv = process.env.TESSELL_BLOG_DRAFTS_DIR?.trim();
+  if (fromEnv) return fromEnv;
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return path.join(here, '..', 'drafts');
+}
+
+/** Absolute tessell-ui clone path — optional `TESSELL_UI_REPO` when `repoPath` omitted */
+function resolveTessellUiRepoPath(explicit?: string | null): string {
+  const t = explicit?.trim();
+  if (t) return path.resolve(t);
+  const env = process.env.TESSELL_UI_REPO?.trim();
+  if (env) return path.resolve(env);
+  throw new Error(
+    'Missing tessell-ui repo path: set TESSELL_UI_REPO or pass repoPath in tool arguments.'
+  );
+}
+
+function resolveDaysBack(explicit?: number): number {
+  if (typeof explicit === 'number' && !Number.isNaN(explicit) && explicit > 0) {
+    return Math.floor(explicit);
+  }
+  const e = process.env.TESSELL_BLOG_DAYS_BACK?.trim();
+  if (e) {
+    const n = parseInt(e, 10);
+    if (!Number.isNaN(n) && n > 0) return n;
+  }
+  return 15;
+}
+
+function defaultSanityPayloadsJsonPath(markdownFilePath: string): string {
+  const abs = path.resolve(markdownFilePath.trim());
+  const dir = path.dirname(abs);
+  const stem = path.basename(abs, path.extname(abs));
+  return path.join(dir, `${stem}.sanity-payloads.json`);
+}
+
+/** Load Sanity-related env from tessell-blog-agent-mcp `.env` or `.env.local`. */
+loadSanityBlogEnv();
 
 const server = new Server(
   {
@@ -53,14 +101,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             repoPath: {
               type: 'string',
-              description: 'Absolute path to the tessell-ui repository on the local machine.',
+              description:
+                'Absolute path to the tessell-ui repository. Optional if TESSELL_UI_REPO is set in the MCP environment.',
             },
             daysBack: {
               type: 'number',
-              description: 'Number of days back to look for commits (default: 14)',
+              description: 'Git log window in days (default: TESSELL_BLOG_DAYS_BACK env or 15)',
             },
           },
-          required: ['repoPath'],
         },
       },
       {
@@ -92,7 +140,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'save_blog_draft',
-        description: 'Saves the AI generated Markdown blog draft to a file in the cms/drafts folder.',
+        description:
+          'Saves the Markdown blog draft under this MCP repo\'s `drafts/` folder by default (or `TESSELL_BLOG_DRAFTS_DIR`). Override with `draftsFolderPath` only if you want another location.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -106,16 +155,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             draftsFolderPath: {
               type: 'string',
-              description: 'The absolute path to the drafts folder (e.g. /Users/name/tessell-web/cms/drafts).',
+              description:
+                'Optional. Absolute path to a drafts folder. If omitted: `TESSELL_BLOG_DRAFTS_DIR` env, else `<tessell-blog-agent-mcp>/drafts`.',
             },
           },
-          required: ['title', 'markdownContent', 'draftsFolderPath'],
+          required: ['title', 'markdownContent'],
         },
       },
       {
         name: 'markdown_to_sanity_blog',
         description:
-          'Converts Markdown + frontmatter to apiReady blogPost JSON. blogCategory/blogTags required; optional thumbnailImageAssetRef / mainImageAssetRef for grid + hero images (Sanity image asset _refs; see get_blog_image_asset_examples). .env defaults supported. Authors not set here.',
+          'Converts Markdown + frontmatter to apiReady blogPost JSON. When `markdownFilePath` is set, always writes `<stem>.sanity-payloads.json` beside that file (optional `outputPayloadsJsonPath` for a second copy elsewhere). blogCategory/blogTags required; optional image asset refs; see get_blog_image_asset_examples.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -127,13 +177,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Raw Markdown string if not using a file.',
             },
+            outputPayloadsJsonPath: {
+              type: 'string',
+              description:
+                'Optional extra path for the JSON result. If omitted but markdownFilePath is set, `<stem>.sanity-payloads.json` is written next to the Markdown file.',
+            },
           },
         },
       },
       {
         name: 'publish_blog_to_sanity',
         description:
-          'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Optional generateCardImageFromContent (or env TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE): renders title+summary as PNG, uploads asset, sets thumbnail+main image if missing. Same sources as markdown_to_sanity_blog; env fills category/tags/images defaults. dryRun skips uploads.',
+          'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Optional generateCardImageFromContent: renders title+summary as PNG, uploads asset, sets thumbnail+main image if missing. Same sources as markdown_to_sanity_blog; env fills category/tags/images defaults. dryRun skips uploads.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -195,40 +250,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'read_tessell_ui_features') {
-    const { repoPath, daysBack = 14 } = request.params.arguments as any;
     try {
-      const { stdout } = await execAsync(`git log --since="${daysBack} days ago" --oneline`, {
-        cwd: repoPath,
-      });
+      const raw = request.params.arguments as { repoPath?: string; daysBack?: number } | undefined;
+      const cwd = resolveTessellUiRepoPath(raw?.repoPath);
+      const daysBack = resolveDaysBack(raw?.daysBack);
+      const { stdout } = await execAsync(
+        `git log --since="${daysBack} days ago" --oneline --no-merges`,
+        { cwd }
+      );
       return {
         content: [{ type: 'text', text: stdout }],
       };
     } catch (e: any) {
+      if (typeof e?.message === 'string' && e.message.includes('tessell-ui')) {
+        throw new McpError(ErrorCode.InvalidParams, e.message);
+      }
       throw new McpError(ErrorCode.InternalError, `Failed to read git log: ${e.message}`);
     }
   }
 
   if (request.params.name === 'get_published_blogs') {
     try {
-      loadTessellWebsiteEnv();
-      const projectId = process.env.SANITY_PROJECT_ID;
-      if (!projectId) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.'
-        );
-      }
-      const dataset = process.env.SANITY_DATASET || 'staging';
-
-      const client = createClient({
-        projectId,
-        dataset,
-        apiVersion: '2024-01-01',
-        // Match tessell-website/sanity/lib/client.tsx (dev = Live API, prod = CDN)
-        useCdn: process.env.NODE_ENV === 'production',
-        perspective: 'published',
-        token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
-      });
+      const { client, projectId, dataset } = createSanityReadClientWithMeta();
 
       const result = await client.fetch(BLOG_POSTS_QUERY);
       const meta = {
@@ -253,24 +296,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (request.params.name === 'get_blog_categories_and_tags') {
     try {
-      loadTessellWebsiteEnv();
-      const projectId = process.env.SANITY_PROJECT_ID;
-      if (!projectId) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.'
-        );
-      }
-      const dataset = process.env.SANITY_DATASET || 'staging';
-
-      const client = createClient({
-        projectId,
-        dataset,
-        apiVersion: '2024-01-01',
-        useCdn: process.env.NODE_ENV === 'production',
-        perspective: 'published',
-        token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
-      });
+      const { client, projectId, dataset } = createSanityReadClientWithMeta();
 
       const [categories, tags] = await Promise.all([
         client.fetch(BLOG_CATEGORIES_QUERY),
@@ -300,24 +326,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (request.params.name === 'get_blog_image_asset_examples') {
     try {
-      loadTessellWebsiteEnv();
-      const projectId = process.env.SANITY_PROJECT_ID;
-      if (!projectId) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example), or point TESSELL_WEBSITE_ENV_PATH at tessell-website/.env, or export SANITY_* in the MCP process.'
-        );
-      }
-      const dataset = process.env.SANITY_DATASET || 'staging';
-
-      const client = createClient({
-        projectId,
-        dataset,
-        apiVersion: '2024-01-01',
-        useCdn: process.env.NODE_ENV === 'production',
-        perspective: 'published',
-        token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
-      });
+      const { client, projectId, dataset } = createSanityReadClientWithMeta();
 
       const examples = await client.fetch(BLOG_IMAGE_EXAMPLES_QUERY);
       const meta = {
@@ -346,6 +355,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const args = (request.params.arguments || {}) as {
       markdownFilePath?: string;
       markdown?: string;
+      outputPayloadsJsonPath?: string;
     };
     if (!args.markdown?.trim() && !args.markdownFilePath?.trim()) {
       throw new McpError(
@@ -358,14 +368,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         markdown: args.markdown,
         markdownFilePath: args.markdownFilePath,
       });
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
+
+      const jsonText = JSON.stringify(result, null, 2);
+      const mdPath = args.markdownFilePath?.trim();
+      const explicitOut = args.outputPayloadsJsonPath?.trim();
+      const savedPaths: string[] = [];
+      const besideMd = mdPath ? defaultSanityPayloadsJsonPath(mdPath) : null;
+      if (besideMd) {
+        await fs.mkdir(path.dirname(besideMd), { recursive: true });
+        await fs.writeFile(besideMd, jsonText, 'utf-8');
+        savedPaths.push(besideMd);
+      }
+      if (explicitOut && (!besideMd || !sameAbsolutePath(explicitOut, besideMd))) {
+        await fs.mkdir(path.dirname(explicitOut), { recursive: true });
+        await fs.writeFile(explicitOut, jsonText, 'utf-8');
+        savedPaths.push(explicitOut);
+      }
+
+      const content: Array<{ type: 'text'; text: string }> = [{ type: 'text', text: jsonText }];
+      if (savedPaths.length > 0) {
+        content.push({
+          type: 'text',
+          text: `Saved full payloads to:\n${savedPaths.join('\n')}`,
+        });
+      }
+
+      return { content };
     } catch (e: any) {
       throw new McpError(ErrorCode.InternalError, e.message || String(e));
     }
@@ -381,7 +409,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       generateCardImageFromContent?: boolean;
     };
     try {
-      loadTessellWebsiteEnv();
       const document = await resolveBlogPostDocument({
         markdownFilePath: args.markdownFilePath,
         sanityPayloadsJsonPath: args.sanityPayloadsJsonPath,
@@ -415,6 +442,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (request.params.name === 'save_blog_draft') {
     const { title, markdownContent, draftsFolderPath } = request.params.arguments as any;
+    const folder = resolveDraftsFolderPath(draftsFolderPath);
 
     const slug = title
       .toLowerCase()
@@ -422,10 +450,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       .replace(/(^-|-$)/g, '');
 
     const fileName = `${slug}.md`;
-    const filePath = path.join(draftsFolderPath, fileName);
+    const filePath = path.join(folder, fileName);
 
     try {
-      await fs.mkdir(draftsFolderPath, { recursive: true });
+      await fs.mkdir(folder, { recursive: true });
       await fs.writeFile(filePath, markdownContent, 'utf-8');
 
       return {
@@ -449,25 +477,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (request.params.name === 'get_published_blog_samples') {
     try {
-      loadTessellWebsiteEnv();
-      const projectId = process.env.SANITY_PROJECT_ID;
-      if (!projectId) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          'SANITY_PROJECT_ID is missing.'
-        );
-      }
-      const dataset = process.env.SANITY_DATASET || 'staging';
+      const { client, projectId, dataset } = createSanityReadClientWithMeta({ useCdn: false });
       const count = Math.min((request.params.arguments as any)?.count || 3, 5);
-
-      const client = createClient({
-        projectId,
-        dataset,
-        apiVersion: '2024-01-01',
-        useCdn: false,
-        perspective: 'published',
-        token: process.env.SANITY_TOKEN || process.env.SANITY_READ_TOKEN || undefined,
-      });
 
       let samples = await client.fetch(BLOG_SAMPLE_PREFERRED_QUERY, {
         slugs: PREFERRED_SAMPLE_SLUGS,

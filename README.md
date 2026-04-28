@@ -18,7 +18,7 @@ This MCP walks through a simple loop:
 |--------|------|
 | **Avoid duplicates** | “What did we already blog?” → fetch published posts from Sanity (same query as the site). |
 | **Discover** | “What changed in tessell-ui lately?” → `git log` for the last *N* days (you choose the repo path and window). |
-| **Draft** | Save Markdown (+ YAML frontmatter) on disk. |
+| **Draft** | Save Markdown (+ YAML frontmatter) under **`tessell-blog-agent-mcp/drafts/`** by default (`save_blog_draft`). |
 | **Convert** | Markdown → Portable Text `blogPost` + Studio-friendly strings. |
 | **Publish** | Optional `createOrReplace` into Sanity (**staging** by default, **draft** by default). |
 
@@ -43,7 +43,7 @@ This MCP walks through a simple loop:
 ### `get_published_blogs`
 
 **Input:** none.  
-**Does:** loads env (same pattern as tessell-website), then **`@sanity/client.fetch(BLOG_POSTS_QUERY)`** — the **published** blog list your site would show, so you can compare before writing.  
+**Does:** loads `.env` / `.env.local` from this MCP repo, then **`@sanity/client.fetch(BLOG_POSTS_QUERY)`** — the **published** blog list your site would show, so you can compare before writing.  
 **Why:** answers “do we already have a post on this?” before you draft.
 
 ### `get_blog_categories_and_tags`
@@ -60,9 +60,9 @@ This MCP walks through a simple loop:
 
 ### `save_blog_draft`
 
-**Input:** `title`, `markdownContent`, `draftsFolderPath`.  
-**Does:** slugifies the title and writes `something.md` under that folder.  
-**Why:** one-shot file drop; you can also create files by hand with a dated name.
+**Input:** `title`, `markdownContent`, optional `draftsFolderPath`.  
+**Does:** slugifies the title and writes `something.md`. **Default folder:** `<tessell-blog-agent-mcp>/drafts` (keeps generated drafts next to this tool). Override with **`draftsFolderPath`**, or set **`TESSELL_BLOG_DRAFTS_DIR`** in `.env`.  
+**Why:** one-shot file drop; you can also create files by hand with a dated name (see [BLOG_AGENT_WORKFLOW.md](./BLOG_AGENT_WORKFLOW.md)).
 
 ### `markdown_to_sanity_blog`
 
@@ -75,7 +75,7 @@ This MCP walks through a simple loop:
 
 ### `publish_blog_to_sanity`
 
-**Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override, optional **`generateCardImageFromContent`** (or set **`TESSELL_AUTO_GENERATE_BLOG_CARD_IMAGE=true`** in `.env`).  
+**Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override, optional **`generateCardImageFromContent`**.  
 **Does:** resolves a `blogPost` document (re-applies **default category/tags/images from `.env`** when loading saved JSON), optionally **generates a PNG** from **title + postSummary** (simple “Tessell” gradient card), **uploads** it as a Sanity image asset, and sets **thumbnail + main** when no thumbnail exists, then **`mutate([{ createOrReplace }])`**. This is **not** AI artwork—just readable typography for cards until design uploads real art in Studio.  
 **Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN` (with permission to upload assets).  
 **Dataset:** defaults to `SANITY_DATASET` or **`staging`**.
@@ -85,7 +85,7 @@ This MCP walks through a simple loop:
 ## Mental model
 
 - **MCP does not host tessell-ui**—it shells out **git** where you point it.
-- **Sanity** is reached with the same project/dataset/token ideas as `tessell-website`; keep datasets straight (**staging** vs **prod**).
+- **Sanity** uses `SANITY_PROJECT_ID`, `SANITY_DATASET`, and `SANITY_TOKEN` from this repo’s `.env` (or exported in the MCP process). Keep datasets straight (**staging** vs **prod**).
 - **One document per successful publish** from Markdown: each conversion can mint a new `_id`; re-posting the same `.md` without pinning an id creates **another** document—edit in Studio or reuse a fixed `_id` in the payload if you need updates.
 
 ---

@@ -1,0 +1,56 @@
+import { createClient } from '@sanity/client';
+import type { SanityClient } from '@sanity/client';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+
+const API_VERSION = '2024-01-01';
+
+/**
+ * Sanity read helpers for MCP tools (`get_published_blogs`, taxonomy, samples, images).
+ * Expects `.env` already loaded (`loadSanityBlogEnv()` in `index.ts` at bootstrap).
+ */
+export function requireSanityProjectId(): string {
+  const projectId = process.env.SANITY_PROJECT_ID;
+  if (!projectId) {
+    throw new McpError(
+      ErrorCode.InternalError,
+      'SANITY_PROJECT_ID is missing. Add tessell-blog-agent-mcp/.env (see .env.example) or export SANITY_* in the MCP process.'
+    );
+  }
+  return projectId;
+}
+
+export function sanityDataset(): string {
+  return process.env.SANITY_DATASET || 'staging';
+}
+
+export type ReadClientOptions = {
+  perspective?: 'published' | 'raw';
+  /** Default: `NODE_ENV === 'production'`; samples tool forces `false`. */
+  useCdn?: boolean;
+};
+
+/** Shared read client + ids for JSON `meta` blocks in tool responses. */
+export function createSanityReadClientWithMeta(options?: ReadClientOptions): {
+  client: SanityClient;
+  projectId: string;
+  dataset: string;
+} {
+  const projectId = requireSanityProjectId();
+  const dataset = sanityDataset();
+  const useCdn =
+    options?.useCdn !== undefined ? options.useCdn : process.env.NODE_ENV === 'production';
+  const perspective = options?.perspective ?? 'published';
+  const token =
+    process.env.SANITY_TOKEN?.trim() || process.env.SANITY_READ_TOKEN?.trim() || undefined;
+
+  const client = createClient({
+    projectId,
+    dataset,
+    apiVersion: API_VERSION,
+    useCdn,
+    perspective,
+    token,
+  });
+
+  return { client, projectId, dataset };
+}

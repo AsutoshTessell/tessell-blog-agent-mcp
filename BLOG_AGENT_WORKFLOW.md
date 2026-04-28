@@ -37,11 +37,12 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    - **Platform update?** → Reader's daily frustration → themed groups with narrative → bigger vision close.
    
    For each feature mentioned, naturally weave in: what it is, why it matters, and what the reader gets — but don't force a rigid template. Use rich paragraphs, not bullet-only lists.
+   - **`draft: true`** in YAML for **every** generated post (primary thematic posts included) until marketing clears the draft in Sanity.
 
 7. **Write a Platform Update post for skipped items**  
    After the primary post(s), create a secondary **"What's New in the Tessell Console — [Month Year]"** post covering items that were skipped or too small for standalone posts (GCP guard-rails, stability fixes, build improvements, minor UI tweaks). See the style guide's "Secondary Platform Update Post for Skipped Items" section for rules.  
    - **Category:** Database Management. **Tone:** Platform Update pattern.  
-   - **Mark `draft: true`** so marketing can decide whether to publish or rework.  
+   - **Draft:** Same as primary posts — **`draft: true`** until marketing publishes.  
    - **Exclude** pure test additions.  
    - **Minimum 3 skipped items** needed; otherwise fold into the primary post as "Also in this release."
 
