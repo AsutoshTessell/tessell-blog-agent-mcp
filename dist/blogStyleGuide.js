@@ -117,7 +117,9 @@ Before writing, analyze the git changes and ask:
 
 ## Sanity \`draft\` flag for generated posts
 
-Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter. Marketing (or an explicit human step) clears the draft in Sanity when a post is approved for the live site. Do not set \`draft: false\` on generated posts unless the workflow explicitly says to publish immediately.
+Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter.
+
+**How it works in practice:** \`markdown_to_sanity_blog\` and \`publish_blog_to_sanity\` **always** write the Sanity \`blogPost\` with **\`draft: true\`** (any \`draft: false\` in frontmatter is ignored). Going live is **not** done by flipping YAML to \`draft: false\`; marketing (or an owner) clears the draft / publishes from **Sanity Studio** when the post is approved.
 
 ## Secondary "Platform Update" Post for Skipped Items
 
