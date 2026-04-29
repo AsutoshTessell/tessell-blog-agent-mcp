@@ -26,8 +26,8 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    - **Skip** pure test additions, internal tooling, embarrassing bug fixes, feature flags without user context.
    - **Mention briefly** (within a larger post): stability fixes, build improvements, minor UI tweaks.
 
-5. **Get taxonomy**  
-   Call **`get_blog_categories_and_tags`**. Pick the right **`blogCategoryRef`** and **`blogTagsRefs`** for your post(s).
+5. **Get taxonomy (every time)**  
+   Call **`get_blog_categories_and_tags`** and pick **`category`** + **`tags`** in frontmatter using **exact `name` strings** (or slugs) from the response, or paste document **`_id`s** into **`blogCategoryRef`** / **`blogTagsRefs`**. The **`markdown_to_sanity_blog`** tool also **fetches the latest** categories and tags from Sanity on each run and matches your YAML — do **not** use **`TESSELL_DEFAULT_BLOG_*`** in `.env` for taxonomy.
 
 6. **Write the draft(s) — match the pattern to the content**  
    **Ground every post in context from \`read_tessell_ui_features\`:** default output includes **merge subject + full message body** (PR-style). Use the **bodies** — not only the first line per commit — for behaviors, edge cases, and scope. Synthesize related blocks into themes; translate into reader-facing prose (never paste raw ticket lists as the post). If the style guide (\`get_blog_style_guide\`) disagrees with shortcutting this step, follow the style guide on using tessell-ui source material.  

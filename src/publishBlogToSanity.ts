@@ -90,7 +90,7 @@ export async function publishBlogPostToSanity(
   options?: {
     dataset?: string;
     dryRun?: boolean;
-    /** If true, generates a PNG from title/postSummary and uploads when no thumbnail yet */
+    /** Deprecated toggle; card image generation is now always on for consistency. */
     generateCardImageFromContent?: boolean;
   }
 ): Promise<PublishBlogPostResult> {
@@ -136,19 +136,16 @@ export async function publishBlogPostToSanity(
     token,
   });
 
-  const docWithId = { ...document, _id: document._id ?? randomUUID() };
-
-  const wantCardImage = Boolean(options?.generateCardImageFromContent);
+  const docWithId: ApiReadyBlogDocument = {
+    ...document,
+    _id: document._id ?? randomUUID(),
+    // MCP policy: always publish as draft.
+    draft: true,
+  };
 
   let generatedImageAssetId: string | undefined;
-  if (wantCardImage) {
-    const gen = await tryGenerateAndUploadBlogCardImage(
-      client,
-      docWithId,
-      slugCurrent ?? 'post'
-    );
-    if (gen) generatedImageAssetId = gen.assetId;
-  }
+  const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
+  if (gen) generatedImageAssetId = gen.assetId;
 
   const sanityResponse = await client.mutate([{ createOrReplace: docWithId as any }]);
 

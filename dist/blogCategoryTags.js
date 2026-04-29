@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { looksLikeSanityDocumentId } from './blogTaxonomyResolve.js';
 function makeKey() {
     return randomUUID().replace(/-/g, '').slice(0, 12);
 }
@@ -27,28 +28,24 @@ function parseRefList(val) {
     return [];
 }
 /**
- * Merges `blogCategory` and `blogTags` (Sanity references) into the document.
- * Frontmatter wins; env defaults fill only missing pieces.
- * Schema: blogCategory → reference `blogCategory`; blogTags → array of references `blogTag`.
+ * Applies only explicit `_ref` strings from frontmatter (no Sanity fetch, no `.env` defaults).
+ * Used for legacy JSON payload flows. Markdown conversion uses `resolveTaxonomyFromSanity` instead.
  */
 export function mergeBlogCategoryAndTags(document, frontmatter) {
     const data = frontmatter || {};
     if (!document.blogCategory) {
-        const cat = pickString(data, 'blogCategoryRef', 'blog_category_ref') ||
-            process.env.TESSELL_DEFAULT_BLOG_CATEGORY_REF?.trim();
-        if (cat) {
-            document.blogCategory = { _type: 'reference', _ref: cat };
+        const cat = pickString(data, 'blogCategoryRef', 'blog_category_ref');
+        if (cat && looksLikeSanityDocumentId(cat)) {
+            document.blogCategory = { _type: 'reference', _ref: cat.trim() };
         }
     }
     if (!document.blogTags?.length) {
-        let tags = parseRefList(data.blogTagsRefs ?? data.blog_tag_refs ?? data.blogTagIds ?? data.blog_tag_ids);
-        if (!tags.length && process.env.TESSELL_DEFAULT_BLOG_TAG_REFS?.trim()) {
-            tags = parseRefList(process.env.TESSELL_DEFAULT_BLOG_TAG_REFS);
-        }
-        if (tags.length) {
-            document.blogTags = tags.map((ref) => ({
+        const rawList = parseRefList(data.blogTagsRefs ?? data.blog_tag_refs ?? data.blogTagIds ?? data.blog_tag_ids);
+        const idOnly = rawList.filter((r) => looksLikeSanityDocumentId(r));
+        if (idOnly.length) {
+            document.blogTags = idOnly.map((ref) => ({
                 _type: 'reference',
-                _ref: ref,
+                _ref: ref.trim(),
                 _key: makeKey(),
             }));
         }

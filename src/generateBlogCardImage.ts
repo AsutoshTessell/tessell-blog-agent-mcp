@@ -83,17 +83,13 @@ function imageFieldFromAssetId(id: string): SanityImageField {
 
 /**
  * Uploads a generated PNG and sets thumbnail + main image on the document (same asset).
- * Skips if `thumbnailImage` is already set.
+ * Existing image references are intentionally overwritten to keep a consistent Tessell card style.
  */
 export async function tryGenerateAndUploadBlogCardImage(
   client: SanityClient,
   document: ApiReadyBlogDocument,
   slugHint: string
 ): Promise<{ assetId: string } | null> {
-  if (document.thumbnailImage?.asset?._ref) {
-    return null;
-  }
-
   const png = await generateBlogCardPng({
     title: document.name,
     subtitle: document.postSummary,

@@ -14,7 +14,7 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 1. **`get_blog_style_guide`** — tone, structure, one post vs multiple, platform-update strategy.
 2. **`get_published_blog_samples`** — learn structure (optional `count`).
 3. **`get_published_blogs`** — avoid duplicate topics; scan titles/summaries.
-4. **`get_blog_categories_and_tags`** — `_id`s for frontmatter.
+4. **`get_blog_categories_and_tags`** — **Call every time** before or while drafting. Use **exact** `name` (or `slug`) values in frontmatter as `category` and `tags` (YAML list), or paste document `_id` values in `blogCategoryRef` / `blogTagsRefs`. The **`markdown_to_sanity_blog`** tool **fetches the latest** categories and tags from Sanity on each run and matches your frontmatter to current documents — do **not** rely on `TESSELL_DEFAULT_BLOG_*` in `.env` for taxonomy.
 5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
 
 ### 2. What changed in tessell-ui

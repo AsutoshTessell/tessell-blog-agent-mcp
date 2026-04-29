@@ -85,14 +85,16 @@ export async function publishBlogPostToSanity(document, options) {
         useCdn: false,
         token,
     });
-    const docWithId = { ...document, _id: document._id ?? randomUUID() };
-    const wantCardImage = Boolean(options?.generateCardImageFromContent);
+    const docWithId = {
+        ...document,
+        _id: document._id ?? randomUUID(),
+        // MCP policy: always publish as draft.
+        draft: true,
+    };
     let generatedImageAssetId;
-    if (wantCardImage) {
-        const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
-        if (gen)
-            generatedImageAssetId = gen.assetId;
-    }
+    const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
+    if (gen)
+        generatedImageAssetId = gen.assetId;
     const sanityResponse = await client.mutate([{ createOrReplace: docWithId }]);
     return {
         ok: true,

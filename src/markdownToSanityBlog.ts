@@ -1,7 +1,8 @@
 import matter from 'gray-matter';
 import { randomUUID } from 'crypto';
 import { markdownToPortableTextBlocks, type PtBlock } from './mdToPortableText.js';
-import { mergeBlogCategoryAndTags } from './blogCategoryTags.js';
+import { loadSanityBlogEnv } from './loadEnv.js';
+import { resolveTaxonomyFromSanity } from './blogTaxonomyResolve.js';
 import type { SanityImageField } from './blogImageFields.js';
 import { mergeBlogImages } from './blogImageFields.js';
 
@@ -62,6 +63,15 @@ function slugify(input: string): string {
     .slice(0, 256);
 }
 
+/** UUID v4 pattern — used when frontmatter supplies an existing Sanity document id for createOrReplace. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function pickOptionalDocumentId(data: Record<string, unknown>): string | undefined {
+  const raw = pickString(data, 'sanityDocumentId', 'documentId', '_id');
+  if (!raw) return undefined;
+  return UUID_RE.test(raw) ? raw : undefined;
+}
+
 function pickString(data: Record<string, unknown>, ...keys: string[]): string {
   for (const k of keys) {
     const v = data[k];
@@ -86,11 +96,19 @@ function normalizeFrontmatter(data: Record<string, unknown>) {
     seoMeta = pickString(s, 'metaDescription');
   }
   if (!seoTitle) seoTitle = pickString(data, 'seoTitle', 'seo_title');
-  if (!seoMeta) seoMeta = pickString(data, 'seoMetaDescription', 'seo_meta_description', 'metaDescription');
+  if (!seoMeta) {
+    seoMeta = pickString(
+      data,
+      'seoMetaDescription',
+      'seo_meta_description',
+      'seoDescription',
+      'metaDescription'
+    );
+  }
 
   const publishedDate = pickString(data, 'publishedDate', 'published_date', 'date');
-  /** Omitted → treat as draft so API/Studio posts are not live until `draft: false` is set explicitly. */
-  const draft = data.draft === undefined ? true : Boolean(data.draft);
+  /** MCP policy: generated/converted posts are always created as drafts. */
+  const draft = true;
   const archived = Boolean(data.archived);
   const headerFeatured = Boolean(data.headerFeatured);
   const featured = Boolean(data.featured);
@@ -122,7 +140,8 @@ export function markdownToSanityBlogPayloads(source: {
   return (async () => {
     const warnings: string[] = [];
     const notes: string[] = [
-      'Set `blogCategoryRef` + `blogTagsRefs` in frontmatter (or TESSELL_DEFAULT_* in .env) — `_id`s for blogCategory / blogTag.',
+      'Category and tags: each `markdown_to_sanity_blog` run fetches the latest `blogCategory` / `blogTag` documents from Sanity. Use `category` + `tags` (human names) and/or `blogCategoryRef` + `blogTagsRefs` (document `_id`s or names) in frontmatter — see README and Cursor rules.',
+      'Optional: `sanityDocumentId` (blogPost UUID) to update an existing document on republish instead of creating a new one.',
       'Optional images: `thumbnailImageAssetRef` + `mainImageAssetRef` (Sanity **image asset** `_ref` from CDNs). Use MCP `get_blog_image_asset_examples` to copy refs from existing posts, or upload in Studio.',
       'Authors: add in Studio unless you extend the tool.',
     ];
@@ -157,7 +176,7 @@ export function markdownToSanityBlogPayloads(source: {
 
     const document: ApiReadyBlogDocument = {
       _type: 'blogPost',
-      _id: randomUUID(),
+      _id: pickOptionalDocumentId(data) ?? randomUUID(),
       name,
       slug: { _type: 'slug', current: slugCurrent },
       postBody,
@@ -176,17 +195,24 @@ export function markdownToSanityBlogPayloads(source: {
     document.headerFeatured = meta.headerFeatured;
     document.featured = meta.featured;
 
-    mergeBlogCategoryAndTags(document, data);
+    loadSanityBlogEnv();
+    try {
+      const taxonomyWarnings = await resolveTaxonomyFromSanity(document, data);
+      warnings.push(...taxonomyWarnings);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      warnings.push(`Taxonomy (category/tags) could not be loaded from Sanity: ${msg}`);
+    }
     mergeBlogImages(document, data);
 
     if (!document.blogCategory) {
       warnings.push(
-        'Missing blogCategory: set `blogCategoryRef` in frontmatter or TESSELL_DEFAULT_BLOG_CATEGORY_REF in .env (Sanity `_id` of a blogCategory document).'
+        'Missing blogCategory: set `category` (name) or `blogCategoryRef` in frontmatter. Names are matched against the latest categories from Sanity (see get_blog_categories_and_tags).'
       );
     }
     if (!document.blogTags?.length) {
       warnings.push(
-        'Missing blogTags: set `blogTagsRefs` in frontmatter (array or comma-separated) or TESSELL_DEFAULT_BLOG_TAG_REFS in .env (one or more blogTag `_id`s).'
+        'Missing blogTags: set `tags` (names) and/or `blogTagsRefs` in frontmatter. Names are matched against the latest tags from Sanity.'
       );
     }
     if (!document.thumbnailImage?.asset?._ref) {

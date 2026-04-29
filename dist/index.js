@@ -119,7 +119,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_blog_categories_and_tags',
-                description: 'Fetches existing blogCategory and blogTag documents from Sanity (GROQ: _id, name, slug). Excludes archived and draft taxonomy rows. Same env as get_published_blogs. Use _id values in frontmatter blogCategoryRef / blogTagsRefs or TESSELL_DEFAULT_* in .env.',
+                description: 'Fetches latest blogCategory and blogTag documents from Sanity (GROQ: _id, name, slug). Excludes archived and draft taxonomy rows. Call this before every draft to pick exact names for `category` / `tags` in frontmatter. The markdown_to_sanity_blog tool re-fetches the same lists on each run to resolve labels to references (TESSELL_DEFAULT_BLOG_* is not used for taxonomy).',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -157,7 +157,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'markdown_to_sanity_blog',
-                description: 'Converts Markdown + frontmatter to apiReady blogPost JSON. When `markdownFilePath` is set, always writes `<stem>.sanity-payloads.json` beside that file (optional `outputPayloadsJsonPath` for a second copy elsewhere). blogCategory/blogTags required; optional image asset refs; see get_blog_image_asset_examples.',
+                description: 'Converts Markdown + frontmatter to apiReady blogPost JSON. Fetches latest blogCategory/blogTag from Sanity and matches `category`/`tags` or ref fields in frontmatter. When `markdownFilePath` is set, always writes `<stem>.sanity-payloads.json` beside that file (optional `outputPayloadsJsonPath` for a second copy elsewhere). Optional image asset refs; see get_blog_image_asset_examples.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -178,7 +178,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'publish_blog_to_sanity',
-                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. Optional generateCardImageFromContent: renders title+summary as PNG, uploads asset, sets thumbnail+main image if missing. Same sources as markdown_to_sanity_blog; env fills category/tags/images defaults. dryRun skips uploads.',
+                description: 'Writes a blog post to Sanity using createOrReplace (mutations API). Requires SANITY_TOKEN with write access. MCP-enforced behavior: always sets `draft: true` and always generates Tessell-themed card images from title+summary (overwriting thumbnail/main image refs for consistency). Markdown path uses live taxonomy fetch from Sanity (same as markdown_to_sanity_blog). dryRun skips uploads.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -204,14 +204,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         },
                         generateCardImageFromContent: {
                             type: 'boolean',
-                            description: 'If true, generates a branded PNG from post title + postSummary and uploads to Sanity when no thumbnailImage yet (requires write token + asset permissions).',
+                            description: 'Deprecated toggle kept for backward compatibility. Card image generation is always enabled by this MCP server.',
                         },
                     },
                 },
             },
             {
                 name: 'get_blog_style_guide',
-                description: 'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
+                description: 'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, how to ground posts in tessell-ui merge messages (subject + body ≈ PR title + PR description), PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -413,6 +413,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const result = await publishBlogPostToSanity(document, {
                 dryRun: Boolean(args.dryRun),
                 dataset: args.dataset?.trim() || undefined,
+                // Backward-compatible input: ignored by publisher, images are always generated.
                 generateCardImageFromContent: Boolean(args.generateCardImageFromContent),
             });
             const payload = {
