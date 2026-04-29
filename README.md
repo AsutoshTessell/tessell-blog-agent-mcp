@@ -4,7 +4,7 @@ This MCP walks through a simple loop:
 
 1. **See what is already published** — pull the live blog list from Sanity so you do not repeat a topic.  
 2. **See what is new in the UI** — point it at your local **tessell-ui** repo and it reads **recent git commits** (by date range), not a full file-by-file diff.  
-3. **Write a post** — save a Markdown draft on disk.  
+3. **Write a post** — use **`get_blog_style_guide`** (includes how to use merge **bodies** from `read_tessell_ui_features` for depth) and save a Markdown draft on disk.  
 4. **Turn it into CMS shape** — build the `blogPost` JSON (Portable Text body, fields from frontmatter).  
 5. **Publish to Sanity** (optional) — send that document into your dataset (staging by default, usually as a draft).
 
@@ -17,8 +17,8 @@ This MCP walks through a simple loop:
 | Phase | Idea |
 |--------|------|
 | **Avoid duplicates** | “What did we already blog?” → fetch published posts from Sanity (same query as the site). |
-| **Discover** | “What changed in tessell-ui lately?” → `git log` for the last *N* days (you choose the repo path and window). |
-| **Draft** | Save Markdown (+ YAML frontmatter) under **`tessell-blog-agent-mcp/drafts/`** by default (`save_blog_draft`). |
+| **Discover** | “What changed in tessell-ui lately?” → `git log` for the last *N* days with **full commit messages** (or `onelineOnly` for a short list) — not `git diff`. |
+| **Draft** | Turn merge **titles + bodies** into reader-facing posts — **`get_blog_style_guide`** explains using that PR-style text as source material. Save Markdown under **`drafts/`** (`save_blog_draft`). |
 | **Convert** | Markdown → Portable Text `blogPost` + Studio-friendly strings. |
 | **Publish** | Optional `createOrReplace` into Sanity (**staging** by default, **draft** by default). |
 
@@ -36,9 +36,9 @@ This MCP walks through a simple loop:
 
 ### `read_tessell_ui_features`
 
-**Input:** `repoPath` (absolute path to your local tessell-ui clone), optional `daysBack` (default **14**).  
-**Does:** runs **`git log --since="<N> days ago" --oneline`** in that folder — a **list of recent commits**, not `git diff`. Use it to spot feature and fix messages for a “what’s new” post.  
-**Why:** you control which clone and how far back to look; nothing is inferred automatically.
+**Input:** `repoPath` (absolute path to your local tessell-ui clone), optional `daysBack` (default **15**), optional **`onelineOnly`**, optional **`revisionDetails`** (default **false** — add commit SHAs only if you need them), optional **`maxCommits`** (default **350**, cap 5000 — output size cap, not “lines of code changed”).  
+**Does:** runs **`git log`** for the date window (no merge commits). **Default output** is **subject + message body** per merge/squash commit — the closest you can get to “PR title + PR description” **from git alone** (squash bodies usually copy the PR text). It does **not** show diffs, files, or patches. Set **`onelineOnly: true`** for titles only. Use GitHub’s PR page if the squash body left out reviewer context.  
+**Why:** blog copy should follow product intent in the PR prose, not enumerate file changes. Pair with **`get_blog_style_guide`** so drafts intentionally mine **message bodies** for behaviors and scope, then translate into Tessell voice.
 
 ### `get_published_blogs`
 

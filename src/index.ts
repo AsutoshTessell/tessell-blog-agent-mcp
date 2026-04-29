@@ -7,7 +7,7 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
@@ -26,7 +26,14 @@ import {
   BLOG_SAMPLE_FALLBACK_QUERY,
 } from './blogStyleGuide.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+function resolveMaxCommits(explicit?: number): number {
+  if (typeof explicit === 'number' && !Number.isNaN(explicit) && explicit > 0) {
+    return Math.min(Math.floor(explicit), 5000);
+  }
+  return 350;
+}
 
 function sameAbsolutePath(a: string, b: string): boolean {
   return path.normalize(path.resolve(a.trim())) === path.normalize(path.resolve(b.trim()));
@@ -95,7 +102,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'read_tessell_ui_features',
-        description: 'Scans the git history of the tessell-ui repository to find recent feature commits. Returns commit messages with short descriptions. Use the output alongside get_blog_style_guide to decide what merits a blog post, what to skip, and whether to create one post or multiple.',
+        description:
+          'Reads recent tessell-ui **merge/squash commit messages only** — no patches, no file lists, no `git diff`. That text is typically the same narrative as the GitHub PR (title = first line / subject, PR description ≈ commit body after squash-merge). Optional `revisionDetails:true` adds commit hashes for troubleshooting. Use with get_blog_style_guide to decide what merits a blog post.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -107,6 +115,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             daysBack: {
               type: 'number',
               description: 'Git log window in days (default: TESSELL_BLOG_DAYS_BACK env or 15)',
+            },
+            onelineOnly: {
+              type: 'boolean',
+              description:
+                'If true, return only `git log --oneline` (titles only). If false (default), return subject + full message body for each commit — closest to PR title + PR description.',
+            },
+            revisionDetails: {
+              type: 'boolean',
+              description:
+                'If true, prepend each commit with its revision hash (`git` SHA). Default false — output looks like stacked PR summaries, not “show me code changes”.',
+            },
+            maxCommits: {
+              type: 'number',
+              description:
+                'Safety cap on how many merged commits to serialize (default 350, cap 5000). Limits markdown length only — still no diffs.',
             },
           },
         },
@@ -224,7 +247,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'get_blog_style_guide',
         description:
-          'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
+          'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, how to ground posts in tessell-ui merge messages (subject + body ≈ PR title + PR description), PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -251,15 +274,69 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'read_tessell_ui_features') {
     try {
-      const raw = request.params.arguments as { repoPath?: string; daysBack?: number } | undefined;
+      const raw = request.params.arguments as
+        | {
+            repoPath?: string;
+            daysBack?: number;
+            onelineOnly?: boolean;
+            maxCommits?: number;
+            revisionDetails?: boolean;
+          }
+        | undefined;
       const cwd = resolveTessellUiRepoPath(raw?.repoPath);
       const daysBack = resolveDaysBack(raw?.daysBack);
-      const { stdout } = await execAsync(
-        `git log --since="${daysBack} days ago" --oneline --no-merges`,
-        { cwd }
+      const onelineOnly = Boolean(raw?.onelineOnly);
+      const revisionDetails = Boolean(raw?.revisionDetails);
+      const maxCommits = resolveMaxCommits(raw?.maxCommits);
+      /** Child-process stdout cap (bytes)—not inspecting “how many lines changed”; just overflow protection. */
+      const maxBuffer = 50 * 1024 * 1024;
+
+      if (onelineOnly) {
+        const { stdout } = await execFileAsync(
+          'git',
+          [
+            'log',
+            `--since=${daysBack} days ago`,
+            '--oneline',
+            '--no-merges',
+            '-n',
+            String(maxCommits),
+          ],
+          { cwd, maxBuffer, encoding: 'utf8' }
+        );
+        return {
+          content: [{ type: 'text', text: stdout }],
+        };
+      }
+
+      /** Subject + body only (%s / %b) — same prose Git stores for squash merges; hashes optional via revisionDetails. */
+      const pretty = revisionDetails
+        ? '---%n%n**Revision** `%H`%n%n%s%n%n%b%n'
+        : '---%n%n%s%n%n%b%n';
+
+      const { stdout } = await execFileAsync(
+        'git',
+        [
+          'log',
+          `--since=${daysBack} days ago`,
+          '--no-merges',
+          '-n',
+          String(maxCommits),
+          `--pretty=format:${pretty}`,
+        ],
+        { cwd, maxBuffer, encoding: 'utf8' }
       );
+
+      const header = [
+        `# Recent tessell-ui work (${daysBack}-day window)`,
+        '',
+        '**Included:** merged commit **titles** (`%s`) and **message bodies** (`%b`) only — comparable to GitHub **PR title + PR description** when teams squash-merge.',
+        '**Excluded:** patches, `--stat`, and file-level diffs. Open the PR in GitHub `(#NNNN)` from the title if you need discussion beyond the squash message.',
+        '',
+      ].join('\n');
+
       return {
-        content: [{ type: 'text', text: stdout }],
+        content: [{ type: 'text', text: header + stdout.trimEnd() + '\n' }],
       };
     } catch (e: any) {
       if (typeof e?.message === 'string' && e.message.includes('tessell-ui')) {

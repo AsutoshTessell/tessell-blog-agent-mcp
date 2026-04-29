@@ -10,7 +10,7 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    - The **samples** return full body text from well-written published posts. Study how they open, how they structure sections, how subheadings tell a story, and how every feature gets context and business impact.
 
 2. **Scan recent changes**  
-   Call **`read_tessell_ui_features`** with **`repoPath`** (absolute path to tessell-ui) and **`daysBack`** (~15).
+   Call **`read_tessell_ui_features`** with **`repoPath`** and **`daysBack`**. Default output is **PR-style text** (squash **subject + body** — not file diffs). Use **`revisionDetails: true`** only if you need commit SHAs for traceability. Prefer this narrative for blog depth; open GitHub PRs when the squash message is thin.
 
 3. **Analyze published content**  
    Call **`get_published_blogs`**. Don't just check for duplicates — analyze:
@@ -30,6 +30,7 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    Call **`get_blog_categories_and_tags`**. Pick the right **`blogCategoryRef`** and **`blogTagsRefs`** for your post(s).
 
 6. **Write the draft(s) — match the pattern to the content**  
+   **Ground every post in context from \`read_tessell_ui_features\`:** default output includes **merge subject + full message body** (PR-style). Use the **bodies** — not only the first line per commit — for behaviors, edge cases, and scope. Synthesize related blocks into themes; translate into reader-facing prose (never paste raw ticket lists as the post). If the style guide (\`get_blog_style_guide\`) disagrees with shortcutting this step, follow the style guide on using tessell-ui source material.  
    Find the published sample that's **most similar** to what you're writing and mirror its structure:
    - **Announcement?** → "We're excited…" → "Why it matters" → benefits → philosophy close.
    - **Problem → Solution?** → Reader's pain → concept explanation → how Tessell solves it → customer proof.
@@ -63,5 +64,5 @@ Summarize: **content strategy decision** (one post / multiple / what was skipped
 ## Quick prompt (copy-paste)
 
 ```text
-Use the Tessell blog MCP: first read get_blog_style_guide and get_published_blog_samples to learn the voice, patterns, and content strategy; then scan tessell-ui git (~15 days) vs published blogs; decide what deserves a post vs what to skip, one post or multiple; find the published sample most similar to your content and mirror its structure; also create a "What's New in the Tessell Console" platform update post for skipped items (so marketing has visibility); save all under tessell-blog-agent-mcp/drafts, convert, publish (dry run then live), generateCardImageFromContent if no image — use my absolute tessell-ui repoPath.
+Use the Tessell blog MCP: first read **`get_blog_style_guide`** and **`get_published_blog_samples`**; call **`read_tessell_ui_features`** (default: full **subject + body** per merge — use bodies for blog depth). Draft using that context **and** the style guide section on tessell-ui source material; compare vs published blogs; decide one post or multiple; mirror the closest published sample; add a "What's New in the Tessell Console" platform update for skipped items where applicable; save under tessell-blog-agent-mcp/drafts, convert, publish (dry run then live), generateCardImageFromContent if no image — use my absolute tessell-ui repoPath.
 ```

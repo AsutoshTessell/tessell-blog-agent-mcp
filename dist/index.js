@@ -2,7 +2,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
@@ -15,7 +15,13 @@ import { createSanityReadClientWithMeta } from './sanityToolHelpers.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
 import { BLOG_STYLE_GUIDE, PREFERRED_SAMPLE_SLUGS, BLOG_SAMPLE_PREFERRED_QUERY, BLOG_SAMPLE_FALLBACK_QUERY, } from './blogStyleGuide.js';
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+function resolveMaxCommits(explicit) {
+    if (typeof explicit === 'number' && !Number.isNaN(explicit) && explicit > 0) {
+        return Math.min(Math.floor(explicit), 5000);
+    }
+    return 350;
+}
 function sameAbsolutePath(a, b) {
     return path.normalize(path.resolve(a.trim())) === path.normalize(path.resolve(b.trim()));
 }
@@ -76,7 +82,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         tools: [
             {
                 name: 'read_tessell_ui_features',
-                description: 'Scans the git history of the tessell-ui repository to find recent feature commits. Returns commit messages with short descriptions. Use the output alongside get_blog_style_guide to decide what merits a blog post, what to skip, and whether to create one post or multiple.',
+                description: 'Reads recent tessell-ui **merge/squash commit messages only** — no patches, no file lists, no `git diff`. That text is typically the same narrative as the GitHub PR (title = first line / subject, PR description ≈ commit body after squash-merge). Optional `revisionDetails:true` adds commit hashes for troubleshooting. Use with get_blog_style_guide to decide what merits a blog post.',
                 inputSchema: {
                     type: 'object',
                     properties: {
@@ -87,6 +93,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         daysBack: {
                             type: 'number',
                             description: 'Git log window in days (default: TESSELL_BLOG_DAYS_BACK env or 15)',
+                        },
+                        onelineOnly: {
+                            type: 'boolean',
+                            description: 'If true, return only `git log --oneline` (titles only). If false (default), return subject + full message body for each commit — closest to PR title + PR description.',
+                        },
+                        revisionDetails: {
+                            type: 'boolean',
+                            description: 'If true, prepend each commit with its revision hash (`git` SHA). Default false — output looks like stacked PR summaries, not “show me code changes”.',
+                        },
+                        maxCommits: {
+                            type: 'number',
+                            description: 'Safety cap on how many merged commits to serialize (default 350, cap 5000). Limits markdown length only — still no diffs.',
                         },
                     },
                 },
@@ -221,9 +239,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const raw = request.params.arguments;
             const cwd = resolveTessellUiRepoPath(raw?.repoPath);
             const daysBack = resolveDaysBack(raw?.daysBack);
-            const { stdout } = await execAsync(`git log --since="${daysBack} days ago" --oneline --no-merges`, { cwd });
+            const onelineOnly = Boolean(raw?.onelineOnly);
+            const revisionDetails = Boolean(raw?.revisionDetails);
+            const maxCommits = resolveMaxCommits(raw?.maxCommits);
+            /** Child-process stdout cap (bytes)—not inspecting “how many lines changed”; just overflow protection. */
+            const maxBuffer = 50 * 1024 * 1024;
+            if (onelineOnly) {
+                const { stdout } = await execFileAsync('git', [
+                    'log',
+                    `--since=${daysBack} days ago`,
+                    '--oneline',
+                    '--no-merges',
+                    '-n',
+                    String(maxCommits),
+                ], { cwd, maxBuffer, encoding: 'utf8' });
+                return {
+                    content: [{ type: 'text', text: stdout }],
+                };
+            }
+            /** Subject + body only (%s / %b) — same prose Git stores for squash merges; hashes optional via revisionDetails. */
+            const pretty = revisionDetails
+                ? '---%n%n**Revision** `%H`%n%n%s%n%n%b%n'
+                : '---%n%n%s%n%n%b%n';
+            const { stdout } = await execFileAsync('git', [
+                'log',
+                `--since=${daysBack} days ago`,
+                '--no-merges',
+                '-n',
+                String(maxCommits),
+                `--pretty=format:${pretty}`,
+            ], { cwd, maxBuffer, encoding: 'utf8' });
+            const header = [
+                `# Recent tessell-ui work (${daysBack}-day window)`,
+                '',
+                '**Included:** merged commit **titles** (`%s`) and **message bodies** (`%b`) only — comparable to GitHub **PR title + PR description** when teams squash-merge.',
+                '**Excluded:** patches, `--stat`, and file-level diffs. Open the PR in GitHub `(#NNNN)` from the title if you need discussion beyond the squash message.',
+                '',
+            ].join('\n');
             return {
-                content: [{ type: 'text', text: stdout }],
+                content: [{ type: 'text', text: header + stdout.trimEnd() + '\n' }],
             };
         }
         catch (e) {

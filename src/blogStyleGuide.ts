@@ -49,6 +49,15 @@ export const BLOG_STYLE_GUIDE = `
 - **Use real scenarios and examples.** "A Fortune 250 railroad operator migrating 500+ databases to Azure…" is far more engaging than "enterprises migrating databases."
 - **Connect features to outcomes.** Every technical change should answer: "So what? Why should the reader care?"
 
+### Tessell-ui source material (\`read_tessell_ui_features\`)
+
+When generating posts from recent **tessell-ui** work, **always** use the full output of **\`read_tessell_ui_features\`** with default options (\`onelineOnly\` **false** so you get **subject + message body** per merge).
+
+- **The body is the depth layer.** After each \`---\` separator you get a **title line** (like a PR subject) and then a **body** — often the same narrative as the GitHub PR description (Squash merge), including bullet lists, testing notes, behavioral detail, and edge cases. **Read and use that body** for *what* shipped and *why* it matters technically; then **rewrite** in Tessell blog voice for the reader — do not stop at the title line alone.
+- **Synthesize across blocks** that share a theme (e.g. multiple GCP-related merges) into one story with clear H2 sections; the merge messages are **source notes**, not draft copy.
+- **If a body is thin or empty**, use the \`(#NNNN)\` in the subject to open the GitHub PR for the full description, or ask for product/marketing context — do not invent behavior the text does not support.
+- Even when grounded in this material, the published post must still follow **What to Avoid** below: no raw ticket IDs, no paste of internal bullet lists as the whole article — **translate** merge/PR prose into customer-facing blog copy.
+
 ## Engagement Patterns from Published Posts
 - **Questions to the reader:** "Think about your business…", "Can I trust this number on my dashboard?"
 - **Analogies:** "Think of it like a GPS: just as a navigation app shows you how you got from point A to point B…"

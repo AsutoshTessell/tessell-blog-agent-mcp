@@ -48,6 +48,15 @@ export const BLOG_STYLE_GUIDE = `
 - **Use real scenarios and examples.** "A Fortune 250 railroad operator migrating 500+ databases to Azure…" is far more engaging than "enterprises migrating databases."
 - **Connect features to outcomes.** Every technical change should answer: "So what? Why should the reader care?"
 
+### Tessell-ui source material (\`read_tessell_ui_features\`)
+
+When generating posts from recent **tessell-ui** work, **always** use the full output of **\`read_tessell_ui_features\`** with default options (\`onelineOnly\` **false** so you get **subject + message body** per merge).
+
+- **The body is the depth layer.** After each \`---\` separator you get a **title line** (like a PR subject) and then a **body** — often the same narrative as the GitHub PR description (Squash merge), including bullet lists, testing notes, behavioral detail, and edge cases. **Read and use that body** for *what* shipped and *why* it matters technically; then **rewrite** in Tessell blog voice for the reader — do not stop at the title line alone.
+- **Synthesize across blocks** that share a theme (e.g. multiple GCP-related merges) into one story with clear H2 sections; the merge messages are **source notes**, not draft copy.
+- **If a body is thin or empty**, use the \`(#NNNN)\` in the subject to open the GitHub PR for the full description, or ask for product/marketing context — do not invent behavior the text does not support.
+- Even when grounded in this material, the published post must still follow **What to Avoid** below: no raw ticket IDs, no paste of internal bullet lists as the whole article — **translate** merge/PR prose into customer-facing blog copy.
+
 ## Engagement Patterns from Published Posts
 - **Questions to the reader:** "Think about your business…", "Can I trust this number on my dashboard?"
 - **Analogies:** "Think of it like a GPS: just as a navigation app shows you how you got from point A to point B…"
@@ -117,9 +126,7 @@ Before writing, analyze the git changes and ask:
 
 ## Sanity \`draft\` flag for generated posts
 
-Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter.
-
-**How it works in practice:** \`markdown_to_sanity_blog\` and \`publish_blog_to_sanity\` **always** write the Sanity \`blogPost\` with **\`draft: true\`** (any \`draft: false\` in frontmatter is ignored). Going live is **not** done by flipping YAML to \`draft: false\`; marketing (or an owner) clears the draft / publishes from **Sanity Studio** when the post is approved.
+Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter. Marketing (or an explicit human step) clears the draft in Sanity when a post is approved for the live site. Do not set \`draft: false\` on generated posts unless the workflow explicitly says to publish immediately.
 
 ## Secondary "Platform Update" Post for Skipped Items
 

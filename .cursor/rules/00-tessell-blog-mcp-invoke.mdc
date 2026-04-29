@@ -19,7 +19,8 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 
 ### 2. What changed in tessell-ui
 
-6. **`read_tessell_ui_features`** — `repoPath` (or env `TESSELL_UI_REPO`), `daysBack` (or `TESSELL_BLOG_DAYS_BACK` / default 15).
+6. **`read_tessell_ui_features`** — `repoPath` (or env `TESSELL_UI_REPO`), `daysBack` (default 15). Reads **merge message title + body** (squash text ≈ PR title + PR description), **not** diffs. Optional **`revisionDetails: true`** adds SHAs.  
+   When **drafting posts**, use the **message bodies** (not only subject lines) plus **`get_blog_style_guide`** — the style guide instructs how to turn that PR-style text into on-brand blog copy with enough depth.
 
 ### 3. Draft, convert, publish
 
