@@ -45,7 +45,7 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    - **`draft: true`** in YAML for **every** generated post (primary thematic posts included) until marketing clears the draft in Sanity.
 
 7. **Write a Platform Update post for skipped items**  
-   After the primary post(s), create a secondary **"What's New in the Tessell Console — [Month Year]"** post covering items that were skipped or too small for standalone posts (GCP guard-rails, stability fixes, build improvements, minor UI tweaks). See the style guide's "Secondary Platform Update Post for Skipped Items" section for rules.  
+   After the primary post(s), create a secondary **"What's New in the Tessell Console"** post covering items that were skipped or too small for standalone posts (GCP guard-rails, stability fixes, build improvements, minor UI tweaks). **Title the post for the actual git window** (e.g. April–May 2026 or a date range when `daysBack` spans months — not only the current calendar month). See the style guide's "Secondary Platform Update Post for Skipped Items" section for rules.  
    - **Category:** Database Management. **Tone:** Platform Update pattern.  
    - **Draft:** Same as primary posts — **`draft: true`** until marketing publishes.  
    - **Exclude** pure test additions.  

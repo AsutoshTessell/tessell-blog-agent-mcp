@@ -102,7 +102,17 @@ Before writing, analyze the git changes and ask:
 - Individual changes are too small to stand on their own (a null-fix alone isn't a blog post).
 - The changes together tell a **cohesive story** for a single audience (e.g. "multi-cloud console refinements" for platform engineers).
 
+**Optional THIRD standalone (e.g. cloud-focused) when:**
+- You have **several user-facing items for one cloud** (GCP, Azure, or AWS) that share one narrative — e.g. guardrails + clone behavior + observability + policy UI all saying "this cloud's console is honest about what works" — **and** a single combined post would bury that cloud for SEO/marketing. Prefer a titled deep dive like "Sharper GCP guardrails in the Tessell console" **plus** the mandatory platform roundup for everything else — do **not** duplicate the same paragraphs in both; tease the cloud post from the roundup in one sentence instead.
+- You do **not** need a third post when those cloud items are few or already the hero of a primary engine post; use judgment and \`get_published_blogs\` (avoid repeating a recent GCP angle).
+
 **Rule of thumb:** If you can write a compelling title and opening hook for a single post that covers all the changes naturally — keep it as one. If the title would have to be vague ("Various Updates") to fit everything — split.
+
+**Before you write — quick checklist:**
+1. Note the **changelog window** (e.g. \`daysBack: 25\` from "today") and the **calendar span** it covers; platform roundup naming must match that span (see **Secondary "Platform Update"** below).
+2. List **2–4 candidate themes** from merges; assign each to *standalone*, *roundup*, or *skip*.
+3. Check **\`get_published_blogs\`** for recent titles on the same theme; pick a different angle or merge if redundant.
+4. After standalones, **everything else user-facing** that is not test-only → platform roundup (or "Also in this release" if fewer than 3 small items).
 
 ## What's Worth a Blog Post vs What Isn't
 
@@ -137,7 +147,11 @@ After creating the primary blog post(s), ALWAYS create a secondary **"What's New
 **Why:** Even items that aren't blog-worthy on their own (GCP guard-rail tweaks, stability fixes, build tooling, minor UI improvements) are valuable for the marketing and product team to know about. They can decide whether to publish, rework, or use it as briefing material.
 
 **Rules for the Platform Update post:**
-- **Title pattern:** "What's New in the Tessell Console — [Month Year]" (e.g. "What's New in the Tessell Console — April 2026")
+- **Title pattern (pick one that matches the git window — do not use a single calendar month unless all commits fall in that month):**
+  - **Preferred when \`daysBack\` spans two months:** "What's New in the Tessell Console — [StartMonth]–[EndMonth] [Year]" (e.g. "… — April–May 2026") or **explicit range**: "… — Apr 7–May 2, 2026" if you state the as-of date in the intro.
+  - **OK when the entire window is inside one month:** "What's New in the Tessell Console — [Month Year]" (e.g. "… — April 2026").
+  - **Avoid:** Labeling the roundup with only the **current** month (e.g. "May") when most or much of the changelog is from the **previous** month — that misleads readers and marketing.
+  - **Intro line:** Optionally one sentence stating the window (e.g. "Here is what landed in the roughly 25 days through [date].") so the post is self-explanatory.
 - **Category:** Database Management (broadest fit for cross-cutting platform changes)
 - **Tone:** Platform Update pattern — accessible, grouped by theme, each item gets 2-4 sentences of narrative context (not raw commit messages)
 - **Structure:**
