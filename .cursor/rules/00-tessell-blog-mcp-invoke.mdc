@@ -7,7 +7,9 @@ alwaysApply: true
 
 **When the user’s intent is Tessell CMS / Sanity blog work** (Tessell blog, publish blog drafts, `blog-mcp`, tessell-blog-agent, What’s New in the Tessell Console, etc.) — not unrelated “blog” tutorials — use the **tessell-blog-agent** MCP tools below **in this order** (skip a step only when not needed).
 
-Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (read for GROQ; write for publish). Set **`TESSELL_UI_REPO`** for git tools if you should not pass `repoPath` each time.
+Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (read for GROQ; write for publish). Set **`TESSELL_UI_REPO`** for git tools if you should not pass `repoPath` each time. For **GitHub-listed repos** (no local clones), set **`TESSELL_GITHUB_REPOS`** and **`GITHUB_TOKEN`** when repos are private (see README).
+
+**Important:** Cursor agents do **not** auto-load `.env` into context. Having `TESSELL_GITHUB_REPOS` set only helps the **MCP server process** when a tool runs; the model still must **call** the tool. Previously the rule listed GitHub changelog as an **OR** with `read_tessell_ui_features`, so assistants often picked the UI tool only. That is corrected below.
 
 ### 1. Voice, strategy, samples, corpus, taxonomy, images (any order after the first two makes sense; run all that apply)
 
@@ -17,9 +19,17 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 4. **`get_blog_categories_and_tags`** — **Call every time** before or while drafting. Use **exact** `name` (or `slug`) values in frontmatter as `category` and `tags` (YAML list), or paste document `_id` values in `blogCategoryRef` / `blogTagsRefs`. The **`markdown_to_sanity_blog`** tool **fetches the latest** categories and tags from Sanity on each run and matches your frontmatter to current documents — do **not** rely on `TESSELL_DEFAULT_BLOG_*` in `.env` for taxonomy.
 5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
 
-### 2. What changed in tessell-ui
+### 2. What changed (changelog) — **GitHub multi-repo first, then UI fallback**
 
-6. **`read_tessell_ui_features`** — `repoPath` (or env `TESSELL_UI_REPO`), `daysBack` (default 15). Reads **merge message title + body** (squash text ≈ PR title + PR description), **not** diffs. Optional **`revisionDetails: true`** adds SHAs.  
+6. **Changelog source (mandatory order for “what shipped” / What’s New style work):**
+
+   1. **If `TESSELL_GITHUB_REPOS` is set** (non-empty in `tessell-blog-agent-mcp/.env`): **always call `read_tessell_github_product_changelog` first** with the same `daysBack` (and the same optional flags as you would use below: `onelineOnly`, `revisionDetails`, `maxCommits`, `maxRepos`). Use `repoUrls` only if you intentionally override the env list. This is the **primary** source when multi-repo is configured.
+   2. **Fallback:** If that tool **errors**, returns nothing useful, or the response indicates **all** listed repos failed — **then** call **`read_tessell_ui_features`** with `repoPath` (absolute local clone) **or** rely on env `TESSELL_UI_REPO` per tool behavior. Use the **same** `daysBack` / optional flags so the narrative window matches.
+   3. **If `TESSELL_GITHUB_REPOS` is not set:** call **`read_tessell_ui_features`** only (same parameters as above).
+
+   - **`read_tessell_github_product_changelog`** — shallow-clones repos from **`TESSELL_GITHUB_REPOS`** into the MCP cache; **`GITHUB_TOKEN`** for private repos. Returns **per-repo sections** in one combined markdown; synthesize **cross-repo themes** for drafts.
+   - **`read_tessell_ui_features`** — local path or `TESSELL_UI_REPO`; merge **subject + body** (squash ≈ PR title + description), **not** diffs. Optional **`revisionDetails: true`** adds SHAs.
+
    When **drafting posts**, use the **message bodies** (not only subject lines) plus **`get_blog_style_guide`** — the style guide instructs how to turn that PR-style text into on-brand blog copy with enough depth.
 
 ### 3. Draft, convert, publish

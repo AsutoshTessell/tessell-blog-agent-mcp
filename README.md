@@ -37,8 +37,15 @@ This MCP walks through a simple loop:
 ### `read_tessell_ui_features`
 
 **Input:** `repoPath` (absolute path to your local tessell-ui clone), optional `daysBack` (default **15**), optional **`onelineOnly`**, optional **`revisionDetails`** (default **false** — add commit SHAs only if you need them), optional **`maxCommits`** (default **350**, cap 5000 — output size cap, not “lines of code changed”).  
-**Does:** runs **`git log`** for the date window (no merge commits). **Default output** is **subject + message body** per merge/squash commit — the closest you can get to “PR title + PR description” **from git alone** (squash bodies usually copy the PR text). It does **not** show diffs, files, or patches. Set **`onelineOnly: true`** for titles only. Use GitHub’s PR page if the squash body left out reviewer context.  
+**Does:** runs **`git log`** for the date window (no merge commits). **Default output** is **subject + message body** per merge/squash commit — the closest you can get to “PR title + PR description” **from git alone** (squash bodies usually copy the PR text). It does **not** show diffs, files, or patches. Set **`onelineOnly: true`** for titles only (no markdown header in that mode). Use GitHub’s PR page if the squash body left out reviewer context.  
 **Why:** blog copy should follow product intent in the PR prose, not enumerate file changes. Pair with **`get_blog_style_guide`** so drafts intentionally mine **message bodies** for behaviors and scope, then translate into Tessell voice.
+
+### `read_tessell_github_product_changelog`
+
+**Input:** optional **`repoUrls`** (comma-separated GitHub URLs — if omitted, uses **`TESSELL_GITHUB_REPOS`** from `.env`), same **`daysBack`**, **`onelineOnly`**, **`revisionDetails`**, **`maxCommits`** as above, plus optional **`maxRepos`** (after dedupe; default **20**, env **`TESSELL_GITHUB_MAX_REPOS`**, cap **100**).  
+**Does:** for each repo URL, **shallow-clones or updates** under **`<tessell-blog-agent-mcp>/.data/git-cache`** (or **`TESSELL_GIT_CACHE_DIR`**), then runs the **same** `git log` as `read_tessell_ui_features`. **`GITHUB_TOKEN`** (optional) is sent only as **`git -c http.extraHeader=Authorization: Basic …`** for clone/fetch — **not** embedded in `git remote` URLs. Returns **one markdown** with a `## Repository: org/repo` section per repo; one repo failing does not stop the others.  
+**Why:** someone can clone **only** this MCP repo, list product GitHub URLs in `.env`, and still get PR-style changelog text for drafting. **Cross-repo “related topics”** are for the model to infer from sectioned output — not auto-clustered inside the MCP.  
+**Coexists with:** `read_tessell_ui_features` when you keep a hot local UI clone and only want GitHub mode for other repos.
 
 ### `get_published_blogs`
 

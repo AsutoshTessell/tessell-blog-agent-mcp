@@ -2,8 +2,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,13 +13,8 @@ import { createSanityReadClientWithMeta } from './sanityToolHelpers.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
 import { BLOG_STYLE_GUIDE, PREFERRED_SAMPLE_SLUGS, BLOG_SAMPLE_PREFERRED_QUERY, BLOG_SAMPLE_FALLBACK_QUERY, } from './blogStyleGuide.js';
-const execFileAsync = promisify(execFile);
-function resolveMaxCommits(explicit) {
-    if (typeof explicit === 'number' && !Number.isNaN(explicit) && explicit > 0) {
-        return Math.min(Math.floor(explicit), 5000);
-    }
-    return 350;
-}
+import { ensureGithubRepoCloned, parseCommaSeparatedRepos, readGitLogPretty, repoDedupeKey, resolveGitCacheRoot, resolveMaxCommits, resolveMaxGithubRepos, } from './gitHubRepos.js';
+const MCP_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 function sameAbsolutePath(a, b) {
     return path.normalize(path.resolve(a.trim())) === path.normalize(path.resolve(b.trim()));
 }
@@ -105,6 +98,39 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         maxCommits: {
                             type: 'number',
                             description: 'Safety cap on how many merged commits to serialize (default 350, cap 5000). Limits markdown length only — still no diffs.',
+                        },
+                    },
+                },
+            },
+            {
+                name: 'read_tessell_github_product_changelog',
+                description: 'For users who only cloned this MCP repo: clones/updates **GitHub** repos listed in `TESSELL_GITHUB_REPOS` (comma-separated `https://github.com/org/repo` URLs) into a local cache, then runs the **same** `git log` (subject + body, no diffs) per repo and returns **one combined** markdown. Optional `GITHUB_TOKEN` for **private** repos (passed via `git -c http.extraHeader=…`, not stored in `remote` URLs). Cap repos with `maxRepos` / `TESSELL_GITHUB_MAX_REPOS`. **Cross-repo “related topics”** are for the drafting model to synthesize from sectioned output — use `get_blog_style_guide`. Does not replace `read_tessell_ui_features` for a simple local UI path.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        repoUrls: {
+                            type: 'string',
+                            description: 'Optional comma-separated GitHub repo URLs. If omitted, uses `TESSELL_GITHUB_REPOS` from the MCP `.env`.',
+                        },
+                        daysBack: {
+                            type: 'number',
+                            description: 'Git log window in days (default: TESSELL_BLOG_DAYS_BACK env or 15)',
+                        },
+                        onelineOnly: {
+                            type: 'boolean',
+                            description: 'If true, oneline log per repo. If false (default), subject + full message body per commit.',
+                        },
+                        revisionDetails: {
+                            type: 'boolean',
+                            description: 'If true, prepend each commit with its revision hash.',
+                        },
+                        maxCommits: {
+                            type: 'number',
+                            description: 'Per-repo cap on commits (default 350, cap 5000).',
+                        },
+                        maxRepos: {
+                            type: 'number',
+                            description: 'Max number of repos to process after dedupe (default: TESSELL_GITHUB_MAX_REPOS env or 20, cap 100).',
                         },
                     },
                 },
@@ -211,7 +237,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: 'get_blog_style_guide',
-                description: 'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, how to ground posts in tessell-ui merge messages (subject + body ≈ PR title + PR description), PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
+                description: 'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, how to ground posts in **merge messages** (subject + body ≈ PR title + PR description) from **`read_tessell_ui_features`** and/or **`read_tessell_github_product_changelog`** (multi-repo: same log format, synthesize themes across repo sections), PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
                 inputSchema: {
                     type: 'object',
                     properties: {},
@@ -242,33 +268,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const onelineOnly = Boolean(raw?.onelineOnly);
             const revisionDetails = Boolean(raw?.revisionDetails);
             const maxCommits = resolveMaxCommits(raw?.maxCommits);
-            /** Child-process stdout cap (bytes)—not inspecting “how many lines changed”; just overflow protection. */
-            const maxBuffer = 50 * 1024 * 1024;
             if (onelineOnly) {
-                const { stdout } = await execFileAsync('git', [
-                    'log',
-                    `--since=${daysBack} days ago`,
-                    '--oneline',
-                    '--no-merges',
-                    '-n',
-                    String(maxCommits),
-                ], { cwd, maxBuffer, encoding: 'utf8' });
+                const body = await readGitLogPretty({
+                    cwd,
+                    daysBack,
+                    onelineOnly: true,
+                    revisionDetails,
+                    maxCommits,
+                });
                 return {
-                    content: [{ type: 'text', text: stdout }],
+                    content: [{ type: 'text', text: body }],
                 };
             }
-            /** Subject + body only (%s / %b) — same prose Git stores for squash merges; hashes optional via revisionDetails. */
-            const pretty = revisionDetails
-                ? '---%n%n**Revision** `%H`%n%n%s%n%n%b%n'
-                : '---%n%n%s%n%n%b%n';
-            const { stdout } = await execFileAsync('git', [
-                'log',
-                `--since=${daysBack} days ago`,
-                '--no-merges',
-                '-n',
-                String(maxCommits),
-                `--pretty=format:${pretty}`,
-            ], { cwd, maxBuffer, encoding: 'utf8' });
+            const body = await readGitLogPretty({
+                cwd,
+                daysBack,
+                onelineOnly: false,
+                revisionDetails,
+                maxCommits,
+            });
             const header = [
                 `# Recent tessell-ui work (${daysBack}-day window)`,
                 '',
@@ -277,7 +295,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 '',
             ].join('\n');
             return {
-                content: [{ type: 'text', text: header + stdout.trimEnd() + '\n' }],
+                content: [{ type: 'text', text: header + body + '\n' }],
             };
         }
         catch (e) {
@@ -285,6 +303,94 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 throw new McpError(ErrorCode.InvalidParams, e.message);
             }
             throw new McpError(ErrorCode.InternalError, `Failed to read git log: ${e.message}`);
+        }
+    }
+    if (request.params.name === 'read_tessell_github_product_changelog') {
+        try {
+            const raw = request.params.arguments;
+            const fromEnv = parseCommaSeparatedRepos(process.env.TESSELL_GITHUB_REPOS);
+            const fromArg = parseCommaSeparatedRepos(raw?.repoUrls);
+            const urls = fromArg.length > 0 ? fromArg : fromEnv;
+            if (urls.length === 0) {
+                throw new McpError(ErrorCode.InvalidParams, 'No GitHub repos configured: set TESSELL_GITHUB_REPOS in tessell-blog-agent-mcp/.env (comma-separated https://github.com/org/repo URLs) or pass repoUrls.');
+            }
+            const daysBack = resolveDaysBack(raw?.daysBack);
+            const onelineOnly = Boolean(raw?.onelineOnly);
+            const revisionDetails = Boolean(raw?.revisionDetails);
+            const maxCommits = resolveMaxCommits(raw?.maxCommits);
+            const maxRepos = resolveMaxGithubRepos(raw?.maxRepos);
+            const token = process.env.GITHUB_TOKEN?.trim();
+            const seen = new Set();
+            const uniqueUrls = [];
+            for (const u of urls) {
+                const key = repoDedupeKey(u);
+                if (seen.has(key))
+                    continue;
+                seen.add(key);
+                uniqueUrls.push(u);
+                if (uniqueUrls.length >= maxRepos)
+                    break;
+            }
+            const cacheRoot = resolveGitCacheRoot(MCP_ROOT);
+            await fs.mkdir(cacheRoot, { recursive: true });
+            const sections = [];
+            const errors = [];
+            for (const repoUrl of uniqueUrls) {
+                try {
+                    const { cwd, label, publicUrl } = await ensureGithubRepoCloned({
+                        repoUrl,
+                        token,
+                        cacheRoot,
+                    });
+                    const logText = await readGitLogPretty({
+                        cwd,
+                        daysBack,
+                        onelineOnly,
+                        revisionDetails,
+                        maxCommits,
+                    });
+                    sections.push([
+                        `## Repository: ${label}`,
+                        '',
+                        `**Clone URL:** ${publicUrl}`,
+                        `**Local cache:** \`${cwd}\``,
+                        '',
+                        logText || '_No commits in this window._',
+                        '',
+                    ].join('\n'));
+                }
+                catch (e) {
+                    errors.push({ repo: repoUrl, error: e?.message || String(e) });
+                    sections.push([
+                        `## Repository: ${repoUrl}`,
+                        '',
+                        `**Error (clone/fetch or log failed):** ${e?.message || String(e)}`,
+                        '',
+                    ].join('\n'));
+                }
+            }
+            const header = [
+                `# Recent product work from ${uniqueUrls.length} GitHub repo(s) (${daysBack}-day window)`,
+                '',
+                '**Included:** same as `read_tessell_ui_features` — `git log` **subject + body** per commit (no diffs). Repos are shallow-cloned/updated under the MCP git cache.',
+                token
+                    ? '**Auth:** `GITHUB_TOKEN` is used only for `git` operations via `http.extraHeader` (not written into remote URLs).'
+                    : '**Auth:** no `GITHUB_TOKEN` set — public repos only unless your environment already grants git access.',
+                '',
+                '**Synthesis:** group related themes **across** sections when drafting (e.g. UI + API spec for one feature). Use `get_blog_style_guide` for voice and depth.',
+                '',
+            ].join('\n');
+            const footer = errors.length > 0
+                ? `\n---\n\n**Warnings:** ${errors.length} repo(s) had errors; see sections above.\n`
+                : '';
+            return {
+                content: [{ type: 'text', text: header + '\n' + sections.join('\n') + footer }],
+            };
+        }
+        catch (e) {
+            if (e instanceof McpError)
+                throw e;
+            throw new McpError(ErrorCode.InternalError, `GitHub changelog failed: ${e.message}`);
         }
     }
     if (request.params.name === 'get_published_blogs') {

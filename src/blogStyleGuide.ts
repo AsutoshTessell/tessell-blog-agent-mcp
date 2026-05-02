@@ -49,12 +49,14 @@ export const BLOG_STYLE_GUIDE = `
 - **Use real scenarios and examples.** "A Fortune 250 railroad operator migrating 500+ databases to Azure…" is far more engaging than "enterprises migrating databases."
 - **Connect features to outcomes.** Every technical change should answer: "So what? Why should the reader care?"
 
-### Tessell-ui source material (\`read_tessell_ui_features\`)
+### Source material from product repos (merge messages)
 
-When generating posts from recent **tessell-ui** work, **always** use the full output of **\`read_tessell_ui_features\`** with default options (\`onelineOnly\` **false** so you get **subject + message body** per merge).
+**Single repo (local UI):** When using **\`read_tessell_ui_features\`**, **always** use the full output with default options (\`onelineOnly\` **false** so you get **subject + message body** per merge).
+
+**Multi-repo (GitHub list in \`TESSELL_GITHUB_REPOS\`):** When using **\`read_tessell_github_product_changelog\`**, you get the **same** \`git log\` format (subject + body per commit, no diffs), **one combined markdown** with a section per repository. Treat each section like the UI log above, and **synthesize across sections** when the same feature ships as API + console work (e.g. new OpenAPI path + UI calling it with the right query flags).
 
 - **The body is the depth layer.** After each \`---\` separator you get a **title line** (like a PR subject) and then a **body** — often the same narrative as the GitHub PR description (Squash merge), including bullet lists, testing notes, behavioral detail, and edge cases. **Read and use that body** for *what* shipped and *why* it matters technically; then **rewrite** in Tessell blog voice for the reader — do not stop at the title line alone.
-- **Synthesize across blocks** that share a theme (e.g. multiple GCP-related merges) into one story with clear H2 sections; the merge messages are **source notes**, not draft copy.
+- **Synthesize across blocks** that share a theme (e.g. multiple GCP-related merges, or UI + API spec for one capability) into one story with clear H2 sections; the merge messages are **source notes**, not draft copy.
 - **If a body is thin or empty**, use the \`(#NNNN)\` in the subject to open the GitHub PR for the full description, or ask for product/marketing context — do not invent behavior the text does not support.
 - Even when grounded in this material, the published post must still follow **What to Avoid** below: no raw ticket IDs, no paste of internal bullet lists as the whole article — **translate** merge/PR prose into customer-facing blog copy.
 
@@ -77,7 +79,7 @@ When generating posts from recent **tessell-ui** work, **always** use the full o
 - 1-3 sentences, reader-facing, benefit-oriented.
 - Should work as a standalone teaser on the blog grid card.
   - ✅ "At Tessell, we've reimagined how data moves across systems with our CDC platform — and through our collaboration with Microsoft Fabric, we're making it easier than ever for businesses to tap into fresh, trustworthy data."
-  - ❌ "A scannable list of what landed in tessell-ui in the last ~15 days."
+  - ❌ "A scannable list of what landed in tessell-ui (or raw multi-repo git output) in the last ~15 days."
 
 ## SEO Title & Meta Description
 - **SEO title:** Benefit-driven, 50-60 chars. Include the main keyword naturally.
@@ -127,7 +129,7 @@ Before writing, analyze the git changes and ask:
 
 ## Sanity \`draft\` flag for generated posts
 
-Posts produced from tessell-ui scans, MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter. Marketing (or an explicit human step) clears the draft in Sanity when a post is approved for the live site. Do not set \`draft: false\` on generated posts unless the workflow explicitly says to publish immediately.
+Posts produced from changelog scans (UI and/or multi-repo GitHub), MCP tools, or automated drafts — **including primary thematic posts** (e.g. GCP, SQL Server deep dives) **and** the secondary Platform Update roundup — should use **\`draft: true\`** in YAML frontmatter. Marketing (or an explicit human step) clears the draft in Sanity when a post is approved for the live site. Do not set \`draft: false\` on generated posts unless the workflow explicitly says to publish immediately.
 
 ## Secondary "Platform Update" Post for Skipped Items
 
