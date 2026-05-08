@@ -42,6 +42,13 @@ import {
 
 const MCP_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+/**
+ * Tracks draft folders that have already been cleared in this server session.
+ * Ensures the drafts folder is wiped once per session (on the first save_blog_draft call),
+ * not on every subsequent draft saved in the same batch.
+ */
+const clearedDraftFolders = new Set<string>();
+
 function sameAbsolutePath(a: string, b: string): boolean {
   return path.normalize(path.resolve(a.trim())) === path.normalize(path.resolve(b.trim()));
 }
@@ -807,6 +814,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const filePath = path.join(folder, fileName);
 
     try {
+      const folderKey = path.resolve(folder);
+      if (!clearedDraftFolders.has(folderKey)) {
+        // First save_blog_draft call this session — wipe any stale drafts from previous runs
+        await fs.rm(folder, { recursive: true, force: true });
+        clearedDraftFolders.add(folderKey);
+      }
       await fs.mkdir(folder, { recursive: true });
       await fs.writeFile(filePath, markdownContent, 'utf-8');
 

@@ -163,6 +163,30 @@ handles it. [Book a demo] or follow this publication for the next post in this s
 
 ---
 
+## 11. postSummary Character Limit (Critical for Hashnode Subtitle)
+
+The \`postSummary\` frontmatter field is used as the Hashnode **subtitle**, which has a
+hard 250-character API limit. The MCP tool clips anything longer — but a clean clip
+is only guaranteed when the summary ends at a sentence boundary.
+
+**Rule: keep \`postSummary\` to 1–2 sentences and ≤ 220 characters.**
+
+✅ Good (189 chars, ends at a sentence boundary):
+> "Oracle PDB Phase 2 features — smarter cloning, conflict-aware backup scheduling, and
+> reliable clone target discovery — are now fully available on AWS."
+
+❌ Bad (runs long, mid-sentence clip risk):
+> "Oracle PDB Phase 2 capabilities including smarter PDB cloning, reliable clone target
+> discovery, and conflict-aware backup scheduling are now fully available on AWS. Teams
+> managing multi-tenant Oracle databases can now do more, with less guesswork, and the
+> full set of capabilities is covered in this post."
+
+If your summary is naturally two sentences, make sure the **first sentence alone fits
+under 220 characters** — that way even if the second sentence pushes over the limit,
+the clip falls on a clean period.
+
+---
+
 ## Quick Checklist Before Publishing to Hashnode
 
 - [ ] TL;DR block present after intro
@@ -172,4 +196,5 @@ handles it. [Book a demo] or follow this publication for the next post in this s
 - [ ] First paragraph hooks within 2 sentences
 - [ ] Paragraphs ≤ 4 sentences
 - [ ] Closing CTA is practitioner-friendly, not just a sales link
+- [ ] \`postSummary\` is ≤ 220 characters and ends at a sentence boundary
 `;

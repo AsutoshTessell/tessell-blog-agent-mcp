@@ -18,10 +18,24 @@ function pickString(data: Record<string, unknown>, ...keys: string[]): string {
 /** Hashnode GraphQL rejects subtitles longer than 250 characters. */
 const HASHNODE_SUBTITLE_MAX = 250;
 
+/**
+ * Clips a subtitle to fit within HASHNODE_SUBTITLE_MAX characters with no ellipsis.
+ * Strategy (in priority order):
+ *  1. If the string already fits, return it as-is.
+ *  2. Find the last sentence-ending punctuation (. ! ?) within the limit and cut there.
+ *  3. Fall back to the last word boundary (space) within the limit.
+ *  4. Hard-slice at the limit as a last resort.
+ */
 function clipForHashnodeSubtitle(s: string): string {
   if (s.length <= HASHNODE_SUBTITLE_MAX) return s;
-  const ellipsis = '…';
-  return s.slice(0, HASHNODE_SUBTITLE_MAX - ellipsis.length).trimEnd() + ellipsis;
+  const candidate = s.slice(0, HASHNODE_SUBTITLE_MAX);
+  // Find the last sentence-ending punctuation within the candidate
+  const sentenceEnd = candidate.search(/[.!?][^.!?]*$/);
+  if (sentenceEnd > 0) return candidate.slice(0, sentenceEnd + 1);
+  // Fall back: trim to last word boundary
+  const lastSpace = candidate.lastIndexOf(' ');
+  if (lastSpace > 0) return candidate.slice(0, lastSpace);
+  return candidate;
 }
 
 function slugify(input: string): string {
