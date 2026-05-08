@@ -1,0 +1,61 @@
+---
+type: agent_requested
+description: Tessell CMS / Sanity blog MCP — invoke tessell-blog-agent tools in order; Sanity then optional Hashnode; changelog GitHub-first.
+---
+
+## Tessell blog MCP (built-in tools only)
+
+**When the user’s intent is Tessell CMS / Sanity blog work** (Tessell blog, publish blog drafts, `blog-mcp`, tessell-blog-agent, What’s New in the Tessell Console, etc.) — not unrelated “blog” tutorials — use the **tessell-blog-agent** MCP tools below **in this order** (skip a step only when not needed).
+
+Prompts like **“Generate and publish Tessell blogs from the past *N* days”** (or weeks/months — use the user’s window as **`daysBack`**) mean the full pipeline through **Sanity** and, when Hashnode is configured, **Hashnode** for **each** drafted post.
+
+Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (read for GROQ; write for publish). Set **`TESSELL_UI_REPO`** for git tools if you should not pass `repoPath` each time. For **GitHub-listed repos** (no local clones), set **`TESSELL_GITHUB_REPOS`** and **`GITHUB_TOKEN`** when repos are private (see README).
+
+**Hashnode (syndication):** For **`publish_blog_to_hashnode`**, set **`HASHNODE_ACCESS_TOKEN`** (PAT from Hashnode → Settings → Developer) and **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`**. Optional **`HASHNODE_PUBLISH_MODE`** (`draft`|`publish`) when the tool omits **`mode`** (default is **draft** / `createDraft`). Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** or per-draft frontmatter **`canonicalUrl`** for **`originalArticleURL`**. If these are missing, **skip** Hashnode steps and say so — do not fail the Sanity workflow.
+
+**Important:** The assistant does **not** auto-load `.env` into context. Having `TESSELL_GITHUB_REPOS` set only helps the **MCP server process** when a tool runs; the model still must **call** the tool. The GitHub changelog step is **not** optional when `TESSELL_GITHUB_REPOS` is set — call it **before** falling back to `read_tessell_ui_features`.
+
+### 1. Voice, strategy, samples, corpus, taxonomy, images (any order after the first two makes sense; run all that apply)
+
+1. **`get_blog_style_guide`** — tone, structure, one post vs multiple, platform-update strategy.
+2. **`get_published_blog_samples`** — learn structure (optional `count`).
+3. **`get_published_blogs`** — avoid duplicate topics; scan titles/summaries.
+4. **`get_blog_categories_and_tags`** — **Call every time** before or while drafting. Use **exact** `name` (or `slug`) values in frontmatter as `category` and `tags` (YAML list), or paste document `_id` values in `blogCategoryRef` / `blogTagsRefs`. The **`markdown_to_sanity_blog`** tool **fetches the latest** categories and tags from Sanity on each run and matches your frontmatter to current documents — do **not** rely on `TESSELL_DEFAULT_BLOG_*` in `.env` for taxonomy.
+5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
+
+### 2. What changed (changelog) — **GitHub multi-repo first, then UI fallback**
+
+6. **Changelog source (mandatory order for “what shipped” / What’s New style work):**
+
+   1. **If `TESSELL_GITHUB_REPOS` is set** (non-empty in `tessell-blog-agent-mcp/.env`): **always call `read_tessell_github_product_changelog` first** with the same `daysBack` (and the same optional flags as you would use below: `onelineOnly`, `revisionDetails`, `maxCommits`, `maxRepos`). Use `repoUrls` only if you intentionally override the env list. This is the **primary** source when multi-repo is configured.
+   2. **Fallback:** If that tool **errors**, returns nothing useful, or the response indicates **all** listed repos failed — **then** call **`read_tessell_ui_features`** with `repoPath` (absolute local clone) **or** rely on env `TESSELL_UI_REPO` per tool behavior. Use the **same** `daysBack` / optional flags so the narrative window matches.
+   3. **If `TESSELL_GITHUB_REPOS` is not set:** call **`read_tessell_ui_features`** only (same parameters as above).
+
+   - **`read_tessell_github_product_changelog`** — shallow-clones repos from **`TESSELL_GITHUB_REPOS`** into the MCP cache; **`GITHUB_TOKEN`** for private repos. Returns **per-repo sections** in one combined markdown; synthesize **cross-repo themes** for drafts.
+   - **`read_tessell_ui_features`** — local path or `TESSELL_UI_REPO`; merge **subject + body** (squash ≈ PR title + description), **not** diffs. Optional **`revisionDetails: true`** adds SHAs.
+
+   When **drafting posts**, use the **message bodies** (not only subject lines) plus **`get_blog_style_guide`** — the style guide instructs how to turn that PR-style text into on-brand blog copy with enough depth.
+
+### 3. Draft, convert, publish (Sanity, then Hashnode)
+
+7. **`save_blog_draft`** — or create `.md` under `drafts/` manually (see `TESSELL_BLOG_DRAFTS_DIR`).
+8. **`markdown_to_sanity_blog`** — **always pass the absolute path** from step 7 as `markdownFilePath` (see chain below); writes `<stem>.sanity-payloads.json` beside the `.md` unless you only pass raw `markdown`.
+9. **`publish_blog_to_sanity`** — `dryRun: true` first; then `dryRun: false` with **`generateCardImageFromContent: true`** when there is no thumbnail yet.
+10. **`publish_blog_to_hashnode`** — **after each successful real Sanity publish** (`dryRun: false`) for that post, call with the **same absolute `markdownFilePath`**. Order: optional **`dryRun: true`** once if you want to confirm **`inputSummary`**; then **`dryRun: false`**. **Default** is **`mode: draft`** (Hashnode **`createDraft`**). Use **`mode: publish`** (or **`HASHNODE_PUBLISH_MODE=publish`** in `.env`) only when the user wants an immediate live Hashnode post. If **`HASHNODE_ACCESS_TOKEN`** and publication id/host are not configured, **skip** this step for that post (Sanity still counts as done).
+
+**Optional setup:** **`resolve_hashnode_publication`** with **`host`** (e.g. `yourname.hashnode.dev`) when the user needs **`HASHNODE_PUBLICATION_ID`** — not required on every blog run.
+
+#### Chain `save_blog_draft` → `markdown_to_sanity_blog` (required for `.sanity-payloads.json`)
+
+- **`save_blog_draft`** responds with text like: `Successfully saved draft to: /absolute/path/to/tessell-blog-agent-mcp/drafts/your-slug.md`.
+- **Immediately next**, call **`markdown_to_sanity_blog`** with **`markdownFilePath`** set to that **same absolute `.md` path** (copy from the save response; do not omit or substitute raw `markdown` unless you intentionally skip writing JSON to disk).
+- Reason: only when `markdownFilePath` is provided does the MCP handler persist **`*.sanity-payloads.json`** next to the Markdown file. Passing only inline `markdown` returns payloads in the tool response but **does not create** the sibling JSON file.
+- If you skipped **`save_blog_draft`** and wrote the file by hand, still pass the **absolute path** to that file as `markdownFilePath`.
+
+#### Chain `publish_blog_to_sanity` → `publish_blog_to_hashnode` (syndication)
+
+- Use the **identical** **`markdownFilePath`** you used for Sanity for that post (the file under `drafts/` or `TESSELL_BLOG_DRAFTS_DIR`).
+- Run **after** Sanity **`publish_blog_to_sanity`** succeeds so canonical URLs and marketing flow stay aligned; if you rely on **`TESSELL_BLOG_CANONICAL_BASE_URL`**, the Tessell slug should match the eventual live blog URL segment.
+- **Multi-post runs:** For each draft file (each **`save_blog_draft`** / each distinct `.md`), repeat steps 8 → 9 → **10** in sequence before moving to the next post.
+
+MCP does not read the user’s typing pipeline; this rule tells the assistant **which tool names to invoke** for the full workflow.
