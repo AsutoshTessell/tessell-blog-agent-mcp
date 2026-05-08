@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 let scanned = false;
 
 /**
- * Load `SANITY_*` and related variables from this repo only:
+ * Load `SANITY_*`, `HASHNODE_*`, and related variables from this repo only:
  * `tessell-blog-agent-mcp/.env`, then `.env.local` (first file found wins; no merge).
  */
 export function loadSanityBlogEnv(): void {

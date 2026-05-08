@@ -6,7 +6,8 @@ This MCP walks through a simple loop:
 2. **See what is new in the UI** — point it at your local **tessell-ui** repo and it reads **recent git commits** (by date range), not a full file-by-file diff.  
 3. **Write a post** — use **`get_blog_style_guide`** (includes how to use merge **bodies** from `read_tessell_ui_features` for depth) and save a Markdown draft on disk.  
 4. **Turn it into CMS shape** — build the `blogPost` JSON (Portable Text body, fields from frontmatter).  
-5. **Publish to Sanity** (optional) — send that document into your dataset (staging by default, usually as a draft).
+5. **Publish to Sanity** (optional) — send that document into your dataset (staging by default, usually as a draft).  
+6. **Publish to Hashnode** (optional) — same Markdown file via Hashnode GraphQL (`publish_blog_to_hashnode`); see **Hashnode** below.
 
 **→ Full step-by-step + copy-paste prompt:** [BLOG_AGENT_WORKFLOW.md](./BLOG_AGENT_WORKFLOW.md)
 
@@ -20,7 +21,7 @@ This MCP walks through a simple loop:
 | **Discover** | “What changed in tessell-ui lately?” → `git log` for the last *N* days with **full commit messages** (or `onelineOnly` for a short list) — not `git diff`. |
 | **Draft** | Turn merge **titles + bodies** into reader-facing posts — **`get_blog_style_guide`** explains using that PR-style text as source material. Save Markdown under **`drafts/`** (`save_blog_draft`). |
 | **Convert** | Markdown → Portable Text `blogPost` + Studio-friendly strings. |
-| **Publish** | Optional `createOrReplace` into Sanity (**staging** by default, **draft** by default). |
+| **Publish** | Optional `createOrReplace` into Sanity (**staging** by default, **draft** by default). Optional second hop to **Hashnode** with the same `.md`. |
 
 ---
 
@@ -87,6 +88,19 @@ This MCP walks through a simple loop:
 **Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN` (with permission to upload assets).  
 **Dataset:** defaults to `SANITY_DATASET` or **`staging`**.
 
+### `resolve_hashnode_publication`
+
+**Input:** optional `host` (e.g. `tessell.hashnode.dev`), or set **`HASHNODE_PUBLICATION_HOST`** in `.env`.  
+**Does:** public GraphQL query to `https://gql.hashnode.com` — returns **`publication.id`** so you can set **`HASHNODE_PUBLICATION_ID`**. No PAT required.  
+**Why:** one-time setup before `publish_blog_to_hashnode`.
+
+### `publish_blog_to_hashnode`
+
+**Input:** **`markdownFilePath`** (absolute `.md`, same file as Sanity), optional **`mode`**: `publish` (default, `publishPost`) or `draft` (`createDraft`), optional **`dryRun`**, optional **`publicationHost`** if `HASHNODE_PUBLICATION_ID` is unset.  
+**Env:** **`HASHNODE_ACCESS_TOKEN`** — Personal Access Token from [Hashnode → Settings → Developer](https://hashnode.com/settings/developer) (send as raw `Authorization` header value, not `Bearer`). **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`** for the publication. Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** — when frontmatter has no `canonicalUrl`, syndication uses `` `${BASE}/${slug}` `` as `originalArticleURL` on Hashnode.  
+**Does:** parses frontmatter (`title`/`name`, `postSummary`→subtitle, `slug`, `tags` → Hashnode tag objects, body → `contentMarkdown`), then **`publishPost`** or **`createDraft`**. See [Hashnode API docs](https://apidocs.hashnode.com/).  
+**Dry-run:** validates Markdown; if token or publication is missing, returns **`dryRun: true`** with a reminder (no network call unless resolving host → id).
+
 ---
 
 ## Mental model
@@ -94,6 +108,7 @@ This MCP walks through a simple loop:
 - **MCP does not host tessell-ui**—it shells out **git** where you point it.
 - **Sanity** uses `SANITY_PROJECT_ID`, `SANITY_DATASET`, and `SANITY_TOKEN` from this repo’s `.env` (or exported in the MCP process). Keep datasets straight (**staging** vs **prod**).
 - **One document per successful publish** from Markdown: each conversion can mint a new `_id`; re-posting the same `.md` without pinning an id creates **another** document—edit in Studio or reuse a fixed `_id` in the payload if you need updates.
+- **Hashnode** uses the same Markdown source; each **`publishPost`** creates a new post. Re-running without dedupe on Hashnode’s side can duplicate—prefer **`mode: draft`** for review, or publish once after Tessell is canonical.
 
 ---
 

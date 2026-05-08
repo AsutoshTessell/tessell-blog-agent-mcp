@@ -1,5 +1,5 @@
 ---
-description: Tessell / Sanity blog MCP — run the existing tools in order (no composite tools).
+description: Tessell / Sanity blog MCP — run tools in order; after Sanity publish, Hashnode when configured.
 alwaysApply: true
 ---
 
@@ -7,7 +7,11 @@ alwaysApply: true
 
 **When the user’s intent is Tessell CMS / Sanity blog work** (Tessell blog, publish blog drafts, `blog-mcp`, tessell-blog-agent, What’s New in the Tessell Console, etc.) — not unrelated “blog” tutorials — use the **tessell-blog-agent** MCP tools below **in this order** (skip a step only when not needed).
 
+Prompts like **“Generate and publish Tessell blogs from the past *N* days”** (or weeks/months — use the user’s window as **`daysBack`**) mean the full pipeline through **Sanity** and, when Hashnode is configured, **Hashnode** for **each** drafted post.
+
 Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (read for GROQ; write for publish). Set **`TESSELL_UI_REPO`** for git tools if you should not pass `repoPath` each time. For **GitHub-listed repos** (no local clones), set **`TESSELL_GITHUB_REPOS`** and **`GITHUB_TOKEN`** when repos are private (see README).
+
+**Hashnode (syndication):** For **`publish_blog_to_hashnode`**, set **`HASHNODE_ACCESS_TOKEN`** (PAT from Hashnode → Settings → Developer) and **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`**. Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** or per-draft frontmatter **`canonicalUrl`** for **`originalArticleURL`**. If these are missing, **skip** Hashnode steps and say so — do not fail the Sanity workflow.
 
 **Important:** Cursor agents do **not** auto-load `.env` into context. Having `TESSELL_GITHUB_REPOS` set only helps the **MCP server process** when a tool runs; the model still must **call** the tool. Previously the rule listed GitHub changelog as an **OR** with `read_tessell_ui_features`, so assistants often picked the UI tool only. That is corrected below.
 
@@ -32,11 +36,14 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 
    When **drafting posts**, use the **message bodies** (not only subject lines) plus **`get_blog_style_guide`** — the style guide instructs how to turn that PR-style text into on-brand blog copy with enough depth.
 
-### 3. Draft, convert, publish
+### 3. Draft, convert, publish (Sanity, then Hashnode)
 
 7. **`save_blog_draft`** — or create `.md` under `drafts/` manually (see `TESSELL_BLOG_DRAFTS_DIR`).
 8. **`markdown_to_sanity_blog`** — **always pass the absolute path** from step 7 as `markdownFilePath` (see chain below); writes `<stem>.sanity-payloads.json` beside the `.md` unless you only pass raw `markdown`.
 9. **`publish_blog_to_sanity`** — `dryRun: true` first; then `dryRun: false` with **`generateCardImageFromContent: true`** when there is no thumbnail yet.
+10. **`publish_blog_to_hashnode`** — **after each successful real Sanity publish** (`dryRun: false`) for that post, call with the **same absolute `markdownFilePath`**. Order: optional **`dryRun: true`** once if you want to confirm **`inputSummary`**; then **`dryRun: false`**. Use **`mode: publish`** unless the user asked for Hashnode drafts only, then **`mode: draft`**. If **`HASHNODE_ACCESS_TOKEN`** and publication id/host are not configured, **skip** this step for that post (Sanity still counts as done).
+
+**Optional setup:** **`resolve_hashnode_publication`** with **`host`** (e.g. `yourname.hashnode.dev`) when the user needs **`HASHNODE_PUBLICATION_ID`** — not required on every blog run.
 
 #### Chain `save_blog_draft` → `markdown_to_sanity_blog` (required for `.sanity-payloads.json`)
 
@@ -44,5 +51,11 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 - **Immediately next**, call **`markdown_to_sanity_blog`** with **`markdownFilePath`** set to that **same absolute `.md` path** (copy from the save response; do not omit or substitute raw `markdown` unless you intentionally skip writing JSON to disk).
 - Reason: only when `markdownFilePath` is provided does the MCP handler persist **`*.sanity-payloads.json`** next to the Markdown file. Passing only inline `markdown` returns payloads in the tool response but **does not create** the sibling JSON file.
 - If you skipped **`save_blog_draft`** and wrote the file by hand, still pass the **absolute path** to that file as `markdownFilePath`.
+
+#### Chain `publish_blog_to_sanity` → `publish_blog_to_hashnode` (syndication)
+
+- Use the **identical** **`markdownFilePath`** you used for Sanity for that post (the file under `drafts/` or `TESSELL_BLOG_DRAFTS_DIR`).
+- Run **after** Sanity **`publish_blog_to_sanity`** succeeds so canonical URLs and marketing flow stay aligned; if you rely on **`TESSELL_BLOG_CANONICAL_BASE_URL`**, the Tessell slug should match the eventual live blog URL segment.
+- **Multi-post runs:** For each draft file (each **`save_blog_draft`** / each distinct `.md`), repeat steps 8 → 9 → **10** in sequence before moving to the next post.
 
 MCP does not read the user’s typing pipeline; this rule tells the assistant **which tool names to invoke** for the full workflow.

@@ -12,6 +12,7 @@ import { loadSanityBlogEnv } from './loadEnv.js';
 import { createSanityReadClientWithMeta } from './sanityToolHelpers.js';
 import { markdownToSanityBlogPayloads } from './markdownToSanityBlog.js';
 import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogToSanity.js';
+import { fetchHashnodePublicationByHost, publishMarkdownToHashnode, } from './publishBlogToHashnode.js';
 import { BLOG_STYLE_GUIDE, PREFERRED_SAMPLE_SLUGS, BLOG_SAMPLE_PREFERRED_QUERY, BLOG_SAMPLE_FALLBACK_QUERY, } from './blogStyleGuide.js';
 import { ensureGithubRepoCloned, parseCommaSeparatedRepos, readGitLogPretty, repoDedupeKey, resolveGitCacheRoot, resolveMaxCommits, resolveMaxGithubRepos, } from './gitHubRepos.js';
 const MCP_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -233,6 +234,46 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                             description: 'Deprecated toggle kept for backward compatibility. Card image generation is always enabled by this MCP server.',
                         },
                     },
+                },
+            },
+            {
+                name: 'resolve_hashnode_publication',
+                description: 'Looks up a Hashnode publication by hostname (e.g. `tessell.hashnode.dev`) via public GraphQL — no token required. Returns `id` for HASHNODE_PUBLICATION_ID. See https://apidocs.hashnode.com/',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        host: {
+                            type: 'string',
+                            description: 'Publication host, e.g. `your-team.hashnode.dev`. Optional if HASHNODE_PUBLICATION_HOST is set in tessell-blog-agent-mcp/.env.',
+                        },
+                    },
+                },
+            },
+            {
+                name: 'publish_blog_to_hashnode',
+                description: 'Publishes the same Markdown draft used for Sanity to Hashnode via GraphQL (`publishPost` or `createDraft`). Requires HASHNODE_ACCESS_TOKEN (PAT) and HASHNODE_PUBLICATION_ID (or pass publicationHost / set HASHNODE_PUBLICATION_HOST). Maps frontmatter `title`/`name`, `postSummary`→subtitle, `slug`, `tags`, body→contentMarkdown; sets `originalArticleURL` from `canonicalUrl` frontmatter or TESSELL_BLOG_CANONICAL_BASE_URL+slug. dryRun builds input without calling Hashnode. Docs: https://apidocs.hashnode.com/',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        markdownFilePath: {
+                            type: 'string',
+                            description: 'Absolute path to the .md file (same as publish_blog_to_sanity).',
+                        },
+                        mode: {
+                            type: 'string',
+                            description: '`publish` (default) — immediate post via publishPost. `draft` — createDraft for review in Hashnode.',
+                            enum: ['publish', 'draft'],
+                        },
+                        dryRun: {
+                            type: 'boolean',
+                            description: 'If true, only validates Markdown and returns the resolved input summary; no Hashnode mutation.',
+                        },
+                        publicationHost: {
+                            type: 'string',
+                            description: 'Optional publication hostname when HASHNODE_PUBLICATION_ID is unset (used to query publication id).',
+                        },
+                    },
+                    required: ['markdownFilePath'],
                 },
             },
             {
@@ -503,6 +544,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 });
             }
             return { content };
+        }
+        catch (e) {
+            throw new McpError(ErrorCode.InternalError, e.message || String(e));
+        }
+    }
+    if (request.params.name === 'resolve_hashnode_publication') {
+        const args = (request.params.arguments || {});
+        const host = args.host?.trim() || process.env.HASHNODE_PUBLICATION_HOST?.trim();
+        if (!host) {
+            throw new McpError(ErrorCode.InvalidParams, 'Provide `host` (e.g. tessell.hashnode.dev) or set HASHNODE_PUBLICATION_HOST in tessell-blog-agent-mcp/.env');
+        }
+        try {
+            const data = await fetchHashnodePublicationByHost(host);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({
+                            host,
+                            publication: data.publication,
+                            hint: data.publication
+                                ? `Set HASHNODE_PUBLICATION_ID=${data.publication.id} in tessell-blog-agent-mcp/.env`
+                                : 'No publication found for this host — check spelling or domain.',
+                        }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (e) {
+            throw new McpError(ErrorCode.InternalError, e.message || String(e));
+        }
+    }
+    if (request.params.name === 'publish_blog_to_hashnode') {
+        const args = (request.params.arguments || {});
+        const md = args.markdownFilePath?.trim();
+        if (!md) {
+            throw new McpError(ErrorCode.InvalidParams, 'markdownFilePath is required (absolute path to .md).');
+        }
+        const mode = args.mode === 'draft' ? 'draft' : 'publish';
+        try {
+            const result = await publishMarkdownToHashnode({
+                markdownFilePath: md,
+                mode,
+                dryRun: Boolean(args.dryRun),
+                publicationHost: args.publicationHost?.trim(),
+            });
+            return {
+                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
         }
         catch (e) {
             throw new McpError(ErrorCode.InternalError, e.message || String(e));

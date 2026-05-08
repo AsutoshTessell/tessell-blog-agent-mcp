@@ -1,6 +1,13 @@
 # Tessell blog agent workflow (MCP)
 
-Use this end-to-end when generating blog posts from **tessell-ui** changes and optionally **publishing** to Sanity.
+Use this end-to-end when generating blog posts from **tessell-ui** changes and optionally **publishing** to **Sanity** and **Hashnode** (same Markdown source).
+
+## Environment (before publishing)
+
+- **Sanity:** `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN` (write for publish). See `.env.example`.
+- **Hashnode (optional syndication):** `HASHNODE_ACCESS_TOKEN` (Personal Access Token — Settings → Developer), and `HASHNODE_PUBLICATION_ID` **or** `HASHNODE_PUBLICATION_HOST` (e.g. `yourname.hashnode.dev`). Optional `TESSELL_BLOG_CANONICAL_BASE_URL` or per-draft YAML `canonicalUrl` so Hashnode gets `originalArticleURL` when Tessell is canonical. Use MCP **`resolve_hashnode_publication`** with `host` if you need to discover `publication.id`.
+
+If Hashnode vars are missing, complete the Sanity steps only and note that Hashnode was skipped.
 
 ## Steps
 
@@ -51,22 +58,24 @@ Use this end-to-end when generating blog posts from **tessell-ui** changes and o
    - **Exclude** pure test additions.  
    - **Minimum 3 skipped items** needed; otherwise fold into the primary post as "Also in this release."
 
-8. **Save, convert, publish**  
-   - **`save_blog_draft`** or write to `tessell-blog-agent-mcp/drafts`.
-   - **`markdown_to_sanity_blog`** → save `*.sanity-payloads.json`.
-   - **`publish_blog_to_sanity`**: **`dryRun: true`** first, then **`dryRun: false`**.
-   - Use **`generateCardImageFromContent: true`** if no thumbnail image.
-   - Publish **both** the primary post(s) and the platform update post.
-   - Note: **authors** may need to be added in Studio.
+8. **Save, convert, publish (Sanity, then Hashnode per post)**  
+   For **each** draft `.md` file:
+   - **`save_blog_draft`** or write to `tessell-blog-agent-mcp/drafts` (or `TESSELL_BLOG_DRAFTS_DIR`).
+   - **`markdown_to_sanity_blog`** with the **absolute** `markdownFilePath` → writes `*.sanity-payloads.json` beside the file.
+   - **`publish_blog_to_sanity`**: **`dryRun: true`** first, then **`dryRun: false`**. Use **`generateCardImageFromContent: true`** if no thumbnail image.
+   - **`publish_blog_to_hashnode`** (same absolute `markdownFilePath`): after each **successful** Sanity publish (`dryRun: false`), optional **`dryRun: true`** once to inspect `inputSummary`, then **`dryRun: false`**. Default **`mode: publish`**; use **`mode: draft`** if Hashnode should hold a draft for review. **Skip** if Hashnode is not configured.
+   - Repeat this block for **every** primary post and for the platform update post.
+
+   **Authors:** may need to be added in Sanity Studio. Hashnode posts use your PAT’s account/publication.
 
 ## Reply expectations
 
-Summarize: **content strategy decision** (one post / multiple / what was skipped and why), **what changed in the UI**, **what was missing from existing blogs**, **category/tag refs**, **image handling**, **draft path(s)**, **platform update post** (what it covers), and **publish results** (dry-run vs live for all posts).
+Summarize: **content strategy decision** (one post / multiple / what was skipped and why), **what changed in the UI**, **what was missing from existing blogs**, **category/tag refs**, **image handling**, **draft path(s)**, **platform update post** (what it covers), **Sanity publish results** (dry-run vs live for all posts), and **Hashnode** (per post: skipped vs draft vs published; URLs/ids if returned).
 
 ---
 
 ## Quick prompt (copy-paste)
 
 ```text
-Use the Tessell blog MCP: first read **`get_blog_style_guide`** and **`get_published_blog_samples`**; if **`TESSELL_GITHUB_REPOS`** is set, call **`read_tessell_github_product_changelog`** first (same **`daysBack`**), else on failure call **`read_tessell_ui_features`** with full **subject + body** per merge. Draft using that context **and** the style guide; compare vs published blogs; decide one post or multiple; mirror the closest published sample; add a "What's New in the Tessell Console" platform update for skipped items where applicable; save under tessell-blog-agent-mcp/drafts, convert, publish (dry run then live), generateCardImageFromContent if no image — use my absolute tessell-ui repoPath for fallback if needed.
+Use the Tessell blog MCP: first read **`get_blog_style_guide`** and **`get_published_blog_samples`**; if **`TESSELL_GITHUB_REPOS`** is set, call **`read_tessell_github_product_changelog`** first (same **`daysBack`**), else on failure call **`read_tessell_ui_features`** with full **subject + body** per merge. Draft using that context **and** the style guide; compare vs published blogs; decide one post or multiple; mirror the closest published sample; add a "What's New in the Tessell Console" platform update for skipped items where applicable; save under tessell-blog-agent-mcp/drafts, **`markdown_to_sanity_blog`** then **`publish_blog_to_sanity`** (dry run then live), **`generateCardImageFromContent`** if no image — then for **each** post, if Hashnode is configured in `.env`, **`publish_blog_to_hashnode`** with the **same** absolute `markdownFilePath` (dry run optional, then live; **`mode: draft`** only if I ask). Use my absolute tessell-ui repoPath for fallback if needed.
 ```
