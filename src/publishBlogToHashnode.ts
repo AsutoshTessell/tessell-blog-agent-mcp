@@ -62,10 +62,11 @@ export type PublishBlogToHashnodeResult = {
     contentMarkdownChars: number;
     tagCount: number;
     originalArticleURL?: string;
+    coverImageURL?: string;
   };
   hashnode?: {
-    post?: { id?: string; title?: string; slug?: string; url?: string; canonicalUrl?: string | null };
-    draft?: { id?: string; title?: string; slug?: string };
+    post?: { id?: string; title?: string; slug?: string; url?: string; canonicalUrl?: string | null; coverImage?: { url?: string } | null };
+    draft?: { id?: string; title?: string; slug?: string; coverImage?: { url?: string } | null };
   };
   reminder?: string;
 };
@@ -148,6 +149,7 @@ export async function publishMarkdownToHashnode(options: {
 
   const tags = normalizeTags(data.tags);
   const originalArticleURL = buildCanonicalUrl(data, slug);
+  const coverImageURL = pickString(data, 'coverImageURL', 'coverImageUrl', 'coverImage');
 
   const token = process.env.HASHNODE_ACCESS_TOKEN?.trim();
   let publicationId =
@@ -162,6 +164,7 @@ export async function publishMarkdownToHashnode(options: {
     contentMarkdownChars: contentMarkdown.length,
     tagCount: tags.length,
     originalArticleURL,
+    coverImageURL: coverImageURL || undefined,
   };
 
   if (options.dryRun || !token || !publicationId) {
@@ -187,6 +190,7 @@ export async function publishMarkdownToHashnode(options: {
     contentMarkdown,
     tags: tags.length ? tags : undefined,
     originalArticleURL: originalArticleURL || undefined,
+    ...(coverImageURL ? { coverImageOptions: { coverImageURL } } : {}),
   };
 
   if (options.mode === 'draft') {

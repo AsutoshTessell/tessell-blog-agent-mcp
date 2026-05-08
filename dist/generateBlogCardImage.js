@@ -83,5 +83,5 @@ export async function tryGenerateAndUploadBlogCardImage(client, document, slugHi
     const id = uploaded._id;
     document.thumbnailImage = imageFieldFromAssetId(id);
     document.mainImage = imageFieldFromAssetId(id);
-    return { assetId: id };
+    return { assetId: id, url: uploaded.url };
 }

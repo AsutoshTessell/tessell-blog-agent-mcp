@@ -79,6 +79,8 @@ export type PublishBlogPostResult = {
   sanityResponse?: unknown;
   /** Present when a title/summary card was generated and uploaded in this run */
   generatedImageAssetId?: string;
+  /** Public Sanity CDN URL for the generated card image — use as Hashnode coverImageURL */
+  generatedImageUrl?: string;
 };
 
 /**
@@ -144,8 +146,12 @@ export async function publishBlogPostToSanity(
   };
 
   let generatedImageAssetId: string | undefined;
+  let generatedImageUrl: string | undefined;
   const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
-  if (gen) generatedImageAssetId = gen.assetId;
+  if (gen) {
+    generatedImageAssetId = gen.assetId;
+    generatedImageUrl = gen.url;
+  }
 
   const sanityResponse = await client.mutate([{ createOrReplace: docWithId as any }]);
 
@@ -158,5 +164,6 @@ export async function publishBlogPostToSanity(
     slug: slugCurrent,
     sanityResponse,
     ...(generatedImageAssetId ? { generatedImageAssetId } : {}),
+    ...(generatedImageUrl ? { generatedImageUrl } : {}),
   };
 }

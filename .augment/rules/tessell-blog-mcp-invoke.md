@@ -22,6 +22,7 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 3. **`get_published_blogs`** — avoid duplicate topics; scan titles/summaries.
 4. **`get_blog_categories_and_tags`** — **Call every time** before or while drafting. Use **exact** `name` (or `slug`) values in frontmatter as `category` and `tags` (YAML list), or paste document `_id` values in `blogCategoryRef` / `blogTagsRefs`. The **`markdown_to_sanity_blog`** tool **fetches the latest** categories and tags from Sanity on each run and matches your frontmatter to current documents — do **not** rely on `TESSELL_DEFAULT_BLOG_*` in `.env` for taxonomy.
 5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
+5b. **`get_hashnode_style_guide`** — call AFTER `get_blog_style_guide` and BEFORE adapting a draft for Hashnode. Covers TL;DR block, cover image (`coverImageURL` auto-injected by `publish_blog_to_sanity`), tag strategy, tone adjustments, canonical URL, and pre-publish checklist.
 
 ### 2. What changed (changelog) — **GitHub multi-repo first, then UI fallback**
 

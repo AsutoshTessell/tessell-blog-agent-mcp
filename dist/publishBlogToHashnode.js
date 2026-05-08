@@ -101,6 +101,7 @@ export async function publishMarkdownToHashnode(options) {
     }
     const tags = normalizeTags(data.tags);
     const originalArticleURL = buildCanonicalUrl(data, slug);
+    const coverImageURL = pickString(data, 'coverImageURL', 'coverImageUrl', 'coverImage');
     const token = process.env.HASHNODE_ACCESS_TOKEN?.trim();
     let publicationId = process.env.HASHNODE_PUBLICATION_ID?.trim() ||
         (await resolveHashnodePublicationId(options.publicationHost));
@@ -112,6 +113,7 @@ export async function publishMarkdownToHashnode(options) {
         contentMarkdownChars: contentMarkdown.length,
         tagCount: tags.length,
         originalArticleURL,
+        coverImageURL: coverImageURL || undefined,
     };
     if (options.dryRun || !token || !publicationId) {
         return {
@@ -135,6 +137,7 @@ export async function publishMarkdownToHashnode(options) {
         contentMarkdown,
         tags: tags.length ? tags : undefined,
         originalArticleURL: originalArticleURL || undefined,
+        ...(coverImageURL ? { coverImageOptions: { coverImageURL } } : {}),
     };
     if (options.mode === 'draft') {
         const result = await hashnodeGraphqlRequest(CREATE_DRAFT_MUTATION, { input: baseInput }, token);

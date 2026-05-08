@@ -75,6 +75,9 @@ export const PUBLISH_POST_MUTATION = `
         slug
         url
         canonicalUrl
+        coverImage {
+          url
+        }
       }
     }
   }
@@ -87,6 +90,9 @@ export const CREATE_DRAFT_MUTATION = `
         id
         title
         slug
+        coverImage {
+          url
+        }
       }
     }
   }

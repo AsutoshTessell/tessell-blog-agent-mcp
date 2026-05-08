@@ -92,9 +92,12 @@ export async function publishBlogPostToSanity(document, options) {
         draft: true,
     };
     let generatedImageAssetId;
+    let generatedImageUrl;
     const gen = await tryGenerateAndUploadBlogCardImage(client, docWithId, slugCurrent ?? 'post');
-    if (gen)
+    if (gen) {
         generatedImageAssetId = gen.assetId;
+        generatedImageUrl = gen.url;
+    }
     const sanityResponse = await client.mutate([{ createOrReplace: docWithId }]);
     return {
         ok: true,
@@ -105,5 +108,6 @@ export async function publishBlogPostToSanity(document, options) {
         slug: slugCurrent,
         sanityResponse,
         ...(generatedImageAssetId ? { generatedImageAssetId } : {}),
+        ...(generatedImageUrl ? { generatedImageUrl } : {}),
     };
 }

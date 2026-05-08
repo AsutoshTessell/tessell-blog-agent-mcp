@@ -89,7 +89,7 @@ export async function tryGenerateAndUploadBlogCardImage(
   client: SanityClient,
   document: ApiReadyBlogDocument,
   slugHint: string
-): Promise<{ assetId: string } | null> {
+): Promise<{ assetId: string; url: string } | null> {
   const png = await generateBlogCardPng({
     title: document.name,
     subtitle: document.postSummary,
@@ -105,5 +105,5 @@ export async function tryGenerateAndUploadBlogCardImage(
   document.thumbnailImage = imageFieldFromAssetId(id);
   document.mainImage = imageFieldFromAssetId(id);
 
-  return { assetId: id };
+  return { assetId: id, url: uploaded.url };
 }

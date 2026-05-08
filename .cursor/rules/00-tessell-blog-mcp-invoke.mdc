@@ -22,6 +22,7 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 3. **`get_published_blogs`** — avoid duplicate topics; scan titles/summaries.
 4. **`get_blog_categories_and_tags`** — **Call every time** before or while drafting. Use **exact** `name` (or `slug`) values in frontmatter as `category` and `tags` (YAML list), or paste document `_id` values in `blogCategoryRef` / `blogTagsRefs`. The **`markdown_to_sanity_blog`** tool **fetches the latest** categories and tags from Sanity on each run and matches your frontmatter to current documents — do **not** rely on `TESSELL_DEFAULT_BLOG_*` in `.env` for taxonomy.
 5. **`get_blog_image_asset_examples`** — reuse `thumbnailImage` / `mainImage` asset refs if needed.
+5b. **`get_hashnode_style_guide`** — call AFTER `get_blog_style_guide` and BEFORE adapting a draft for Hashnode. Covers TL;DR block (required on Hashnode), opening hook style, tone adjustments for a developer audience, cover image (`coverImageURL` is auto-injected into frontmatter by `publish_blog_to_sanity` — no manual step needed), tag selection strategy (up to 5 Hashnode tags), paragraph length, canonical URL setup, and a pre-publish checklist.
 
 ### 2. What changed (changelog) — **GitHub multi-repo first, then UI fallback**
 
@@ -40,8 +41,8 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 
 7. **`save_blog_draft`** — or create `.md` under `drafts/` manually (see `TESSELL_BLOG_DRAFTS_DIR`).
 8. **`markdown_to_sanity_blog`** — **always pass the absolute path** from step 7 as `markdownFilePath` (see chain below); writes `<stem>.sanity-payloads.json` beside the `.md` unless you only pass raw `markdown`.
-9. **`publish_blog_to_sanity`** — `dryRun: true` first; then `dryRun: false` with **`generateCardImageFromContent: true`** when there is no thumbnail yet.
-10. **`publish_blog_to_hashnode`** — **after each successful real Sanity publish** (`dryRun: false`) for that post, call with the **same absolute `markdownFilePath`**. Order: optional **`dryRun: true`** once if you want to confirm **`inputSummary`**; then **`dryRun: false`**. **Default** is **`mode: draft`** (Hashnode **`createDraft`**). Use **`mode: publish`** (or **`HASHNODE_PUBLISH_MODE=publish`** in `.env`) only when the user wants an immediate live Hashnode post. If **`HASHNODE_ACCESS_TOKEN`** and publication id/host are not configured, **skip** this step for that post (Sanity still counts as done).
+9. **`publish_blog_to_sanity`** — `dryRun: true` first; then `dryRun: false`. Always pass **`markdownFilePath`** (not `documentJson`) so the server can auto-inject `coverImageURL` into the `.md` frontmatter after the card image is generated — this is what feeds the Hashnode cover image automatically.
+10. **`publish_blog_to_hashnode`** — **after each successful real Sanity publish** (`dryRun: false`) for that post, call with the **same absolute `markdownFilePath`**. The `coverImageURL` frontmatter field is already populated by step 9 — no manual action needed. Order: optional **`dryRun: true`** once if you want to confirm **`inputSummary`** (check `coverImageURL` is present); then **`dryRun: false`**. **Default** is **`mode: draft`** (Hashnode **`createDraft`**). Use **`mode: publish`** (or **`HASHNODE_PUBLISH_MODE=publish`** in `.env`) only when the user wants an immediate live Hashnode post. If **`HASHNODE_ACCESS_TOKEN`** and publication id/host are not configured, **skip** this step for that post (Sanity still counts as done).
 
 **Optional setup:** **`resolve_hashnode_publication`** with **`host`** (e.g. `yourname.hashnode.dev`) when the user needs **`HASHNODE_PUBLICATION_ID`** — not required on every blog run.
 
@@ -55,6 +56,7 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 #### Chain `publish_blog_to_sanity` → `publish_blog_to_hashnode` (syndication)
 
 - Use the **identical** **`markdownFilePath`** you used for Sanity for that post (the file under `drafts/` or `TESSELL_BLOG_DRAFTS_DIR`).
+- **Cover image is automatic:** `publish_blog_to_sanity` generates a branded PNG, uploads it to Sanity CDN, and writes `coverImageURL: https://cdn.sanity.io/...` directly into the `.md` frontmatter. `publish_blog_to_hashnode` reads this field and passes it as `coverImageOptions.coverImageURL` in the GraphQL mutation — no copy-paste or manual URL needed. Confirm it arrived by checking `inputSummary.coverImageURL` in the `dryRun: true` response.
 - Run **after** Sanity **`publish_blog_to_sanity`** succeeds so canonical URLs and marketing flow stay aligned; if you rely on **`TESSELL_BLOG_CANONICAL_BASE_URL`**, the Tessell slug should match the eventual live blog URL segment.
 - **Multi-post runs:** For each draft file (each **`save_blog_draft`** / each distinct `.md`), repeat steps 8 → 9 → **10** in sequence before moving to the next post.
 

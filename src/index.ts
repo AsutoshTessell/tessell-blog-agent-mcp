@@ -28,6 +28,8 @@ import {
   BLOG_SAMPLE_PREFERRED_QUERY,
   BLOG_SAMPLE_FALLBACK_QUERY,
 } from './blogStyleGuide.js';
+import { HASHNODE_STYLE_GUIDE } from './hashnodeStyleGuide.js';
+import matter from 'gray-matter';
 import {
   ensureGithubRepoCloned,
   parseCommaSeparatedRepos,
@@ -85,6 +87,17 @@ function defaultSanityPayloadsJsonPath(markdownFilePath: string): string {
   const dir = path.dirname(abs);
   const stem = path.basename(abs, path.extname(abs));
   return path.join(dir, `${stem}.sanity-payloads.json`);
+}
+
+/**
+ * Injects or updates `coverImageURL` in a Markdown file's YAML frontmatter.
+ * Called after Sanity publish so the Hashnode step can pick up the generated image URL automatically.
+ */
+async function injectCoverImageUrl(markdownFilePath: string, url: string): Promise<void> {
+  const raw = await fs.readFile(markdownFilePath, 'utf-8');
+  const parsed = matter(raw);
+  parsed.data.coverImageURL = url;
+  await fs.writeFile(markdownFilePath, matter.stringify(parsed.content, parsed.data), 'utf-8');
 }
 
 /** Load Sanity-related env from tessell-blog-agent-mcp `.env` or `.env.local`. */
@@ -334,6 +347,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: 'get_blog_style_guide',
         description:
           'Returns the Tessell blog writing style guide AND content strategy. Covers: tone, structure, title patterns, engagement techniques, anti-patterns, how to ground posts in **merge messages** (subject + body ≈ PR title + PR description) from **`read_tessell_ui_features`** and/or **`read_tessell_github_product_changelog`** (multi-repo: same log format, synthesize themes across repo sections), PLUS — how to decide one post vs multiple, what deserves a blog vs what doesn\'t, the "What → Why → How It Helps" section pattern for each feature, audience understanding, how to learn from published blog patterns, AND the secondary "Platform Update" post strategy for skipped items (so marketing has visibility into all changes). Call this BEFORE writing any draft.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_hashnode_style_guide',
+        description:
+          'Returns the Hashnode-specific writing guide for Tessell blog posts. Covers: TL;DR section (required on Hashnode), opening hook style, tone adjustments for a developer audience, cover image requirements (auto-injected from Sanity publish as `coverImageURL`), tag selection strategy (up to 5 tags), structural differences from the Sanity draft (shorter paragraphs, code blocks, practitioner CTA), canonical URL setup, and a pre-publish checklist. Call this AFTER `get_blog_style_guide` and BEFORE adapting a draft for `publish_blog_to_hashnode`.',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -737,13 +759,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // Backward-compatible input: ignored by publisher, images are always generated.
         generateCardImageFromContent: Boolean(args.generateCardImageFromContent),
       });
+
+      // Inject the generated image URL back into the Markdown frontmatter so that
+      // publish_blog_to_hashnode can pick it up automatically as coverImageURL.
+      const mdPath = args.markdownFilePath?.trim();
+      if (!result.dryRun && result.generatedImageUrl && mdPath) {
+        try {
+          await injectCoverImageUrl(mdPath, result.generatedImageUrl);
+        } catch {
+          // Non-fatal: log but don't fail the Sanity publish
+        }
+      }
+
       const payload = {
         ...result,
         reminder: result.dryRun
           ? 'Dry run only — no write to Sanity.'
-          : result.generatedImageAssetId
-            ? `Generated card image uploaded to Sanity (asset id in generatedImageAssetId). Authors may still be required in Studio.`
-            : 'Open in Studio if authors or manual image tweaks are still required.',
+          : result.generatedImageUrl
+            ? `Generated card image uploaded to Sanity. coverImageURL injected into frontmatter for Hashnode (generatedImageUrl in response). Authors may still be required in Studio.`
+            : result.generatedImageAssetId
+              ? `Generated card image uploaded to Sanity (asset id in generatedImageAssetId). Authors may still be required in Studio.`
+              : 'Open in Studio if authors or manual image tweaks are still required.',
       };
       return {
         content: [
@@ -790,6 +826,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'get_blog_style_guide') {
     return {
       content: [{ type: 'text', text: BLOG_STYLE_GUIDE }],
+    };
+  }
+
+  if (request.params.name === 'get_hashnode_style_guide') {
+    return {
+      content: [{ type: 'text', text: HASHNODE_STYLE_GUIDE }],
     };
   }
 
