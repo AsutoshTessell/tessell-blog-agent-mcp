@@ -96,9 +96,9 @@ This MCP walks through a simple loop:
 
 ### `publish_blog_to_hashnode`
 
-**Input:** **`markdownFilePath`** (absolute `.md`, same file as Sanity), optional **`mode`**: `publish` (default, `publishPost`) or `draft` (`createDraft`), optional **`dryRun`**, optional **`publicationHost`** if `HASHNODE_PUBLICATION_ID` is unset.  
-**Env:** **`HASHNODE_ACCESS_TOKEN`** — Personal Access Token from [Hashnode → Settings → Developer](https://hashnode.com/settings/developer) (send as raw `Authorization` header value, not `Bearer`). **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`** for the publication. Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** — when frontmatter has no `canonicalUrl`, syndication uses `` `${BASE}/${slug}` `` as `originalArticleURL` on Hashnode.  
-**Does:** parses frontmatter (`title`/`name`, `postSummary`→subtitle, `slug`, `tags` → Hashnode tag objects, body → `contentMarkdown`), then **`publishPost`** or **`createDraft`**. See [Hashnode API docs](https://apidocs.hashnode.com/).  
+**Input:** **`markdownFilePath`** (absolute `.md`, same file as Sanity), optional **`mode`**: `draft` (default — `createDraft`, review in Hashnode) or `publish` (`publishPost`, live). When **`mode` is omitted**, use env **`HASHNODE_PUBLISH_MODE`** (`draft` or `publish`); if unset, behavior is **draft**. Optional **`dryRun`**, optional **`publicationHost`** if `HASHNODE_PUBLICATION_ID` is unset.  
+**Env:** **`HASHNODE_ACCESS_TOKEN`** — Personal Access Token from [Hashnode → Settings → Developer](https://hashnode.com/settings/developer) (send as raw `Authorization` header value, not `Bearer`). **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`** for the publication. Optional **`HASHNODE_PUBLISH_MODE`** — `draft` (default) or `publish` when the tool call omits **`mode`**. Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** — when frontmatter has no `canonicalUrl`, syndication uses `` `${BASE}/${slug}` `` as `originalArticleURL` on Hashnode.  
+**Does:** parses frontmatter (`title`/`name`, `postSummary`→subtitle, `slug`, `tags` → Hashnode tag objects, body → `contentMarkdown`), then **`createDraft`** (default) or **`publishPost`** when **`mode`** / **`HASHNODE_PUBLISH_MODE`** is `publish`. See [Hashnode API docs](https://apidocs.hashnode.com/).  
 **Dry-run:** validates Markdown; if token or publication is missing, returns **`dryRun: true`** with a reminder (no network call unless resolving host → id).
 
 ---
@@ -108,7 +108,7 @@ This MCP walks through a simple loop:
 - **MCP does not host tessell-ui**—it shells out **git** where you point it.
 - **Sanity** uses `SANITY_PROJECT_ID`, `SANITY_DATASET`, and `SANITY_TOKEN` from this repo’s `.env` (or exported in the MCP process). Keep datasets straight (**staging** vs **prod**).
 - **One document per successful publish** from Markdown: each conversion can mint a new `_id`; re-posting the same `.md` without pinning an id creates **another** document—edit in Studio or reuse a fixed `_id` in the payload if you need updates.
-- **Hashnode** uses the same Markdown source; each **`publishPost`** creates a new post. Re-running without dedupe on Hashnode’s side can duplicate—prefer **`mode: draft`** for review, or publish once after Tessell is canonical.
+- **Hashnode** uses the same Markdown source; each **`publishPost`** creates a new live post. Re-running without dedupe on Hashnode’s side can duplicate—**default** is **`createDraft`**; use **`mode: publish`** (or env) only when you want an immediate public post on Hashnode.
 
 ---
 

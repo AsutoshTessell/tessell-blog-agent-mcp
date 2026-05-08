@@ -65,6 +65,23 @@ export async function resolveHashnodePublicationId(publicationHost) {
     const data = await fetchHashnodePublicationByHost(host);
     return data.publication?.id ?? undefined;
 }
+/**
+ * Tool/explicit `mode` wins; otherwise **`HASHNODE_PUBLISH_MODE`** (`draft`|`publish`).
+ * If unset, defaults to **`draft`** (Hashnode `createDraft` — review before live).
+ */
+export function resolveHashnodeMode(explicit) {
+    const m = explicit?.trim().toLowerCase();
+    if (m === 'publish')
+        return 'publish';
+    if (m === 'draft')
+        return 'draft';
+    const env = process.env.HASHNODE_PUBLISH_MODE?.trim().toLowerCase();
+    if (env === 'publish')
+        return 'publish';
+    if (env === 'draft')
+        return 'draft';
+    return 'draft';
+}
 export async function publishMarkdownToHashnode(options) {
     const absPath = options.markdownFilePath.trim();
     const raw = await readFile(absPath, 'utf-8');

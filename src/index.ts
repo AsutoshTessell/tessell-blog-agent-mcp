@@ -20,6 +20,7 @@ import { publishBlogPostToSanity, resolveBlogPostDocument } from './publishBlogT
 import {
   fetchHashnodePublicationByHost,
   publishMarkdownToHashnode,
+  resolveHashnodeMode,
 } from './publishBlogToHashnode.js';
 import {
   BLOG_STYLE_GUIDE,
@@ -302,7 +303,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'publish_blog_to_hashnode',
         description:
-          'Publishes the same Markdown draft used for Sanity to Hashnode via GraphQL (`publishPost` or `createDraft`). Requires HASHNODE_ACCESS_TOKEN (PAT) and HASHNODE_PUBLICATION_ID (or pass publicationHost / set HASHNODE_PUBLICATION_HOST). Maps frontmatter `title`/`name`, `postSummary`→subtitle, `slug`, `tags`, body→contentMarkdown; sets `originalArticleURL` from `canonicalUrl` frontmatter or TESSELL_BLOG_CANONICAL_BASE_URL+slug. dryRun builds input without calling Hashnode. Docs: https://apidocs.hashnode.com/',
+          'Sends the same Markdown draft used for Sanity to Hashnode via GraphQL (`createDraft` by default, or `publishPost` when mode/env says publish). Requires HASHNODE_ACCESS_TOKEN (PAT) and HASHNODE_PUBLICATION_ID (or pass publicationHost / set HASHNODE_PUBLICATION_HOST). Default mode is **draft** (review in Hashnode); set **`HASHNODE_PUBLISH_MODE=publish`** or pass **`mode: publish`** for immediate live posts. Docs: https://apidocs.hashnode.com/',
         inputSchema: {
           type: 'object',
           properties: {
@@ -313,7 +314,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             mode: {
               type: 'string',
               description:
-                '`publish` (default) — immediate post via publishPost. `draft` — createDraft for review in Hashnode.',
+                'Optional override. **`draft`** — createDraft (default when omitted). **`publish`** — publishPost (live). Env **`HASHNODE_PUBLISH_MODE`** (`draft`|`publish`) applies when this is omitted.',
               enum: ['publish', 'draft'],
             },
             dryRun: {
@@ -699,7 +700,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (!md) {
       throw new McpError(ErrorCode.InvalidParams, 'markdownFilePath is required (absolute path to .md).');
     }
-    const mode = args.mode === 'draft' ? 'draft' : 'publish';
+    const mode = resolveHashnodeMode(args.mode);
     try {
       const result = await publishMarkdownToHashnode({
         markdownFilePath: md,
