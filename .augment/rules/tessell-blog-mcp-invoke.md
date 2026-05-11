@@ -13,6 +13,8 @@ Ensure **`tessell-blog-agent-mcp/.env`** has `SANITY_PROJECT_ID`, `SANITY_DATASE
 
 **Hashnode (syndication):** For **`publish_blog_to_hashnode`**, set **`HASHNODE_ACCESS_TOKEN`** (PAT from Hashnode → Settings → Developer) and **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`**. Optional **`HASHNODE_PUBLISH_MODE`** (`draft`|`publish`) when the tool omits **`mode`** (default is **draft** / `createDraft`). Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** or per-draft frontmatter **`canonicalUrl`** for **`originalArticleURL`**. If these are missing, **skip** Hashnode steps and say so — do not fail the Sanity workflow.
 
+**⚠️ MANDATORY before concluding Hashnode is not configured:** Always read `tessell-blog-agent-mcp/.env` (use the `view` tool on `.env`) to verify whether `HASHNODE_ACCESS_TOKEN` and `HASHNODE_PUBLICATION_ID` (or `HASHNODE_PUBLICATION_HOST`) are present **before** skipping the Hashnode step or telling the user Hashnode is not configured. Do **not** assume they are missing based on prior context or memory alone. Only skip Hashnode if the `.env` file check confirms those keys are absent.
+
 **Important:** The assistant does **not** auto-load `.env` into context. Having `TESSELL_GITHUB_REPOS` set only helps the **MCP server process** when a tool runs; the model still must **call** the tool. The GitHub changelog step is **not** optional when `TESSELL_GITHUB_REPOS` is set — call it **before** falling back to `read_tessell_ui_features`.
 
 ### 1. Voice, strategy, samples, corpus, taxonomy, images (any order after the first two makes sense; run all that apply)
