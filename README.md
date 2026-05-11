@@ -1,117 +1,164 @@
-# Tessell blog agent MCP
+# Tessell Blog Agent MCP
 
-This MCP walks through a simple loop:
+Every time your team ships a feature, someone has to figure out what changed, write a blog post that explains it clearly, match Tessell’s tone, and publish it to the website and Hashnode. That used to take days per post — and often got skipped entirely.
 
-1. **See what is already published** — pull the live blog list from Sanity so you do not repeat a topic.  
-2. **See what is new in the UI** — point it at your local **tessell-ui** repo and it reads **recent git commits** (by date range), not a full file-by-file diff.  
-3. **Write a post** — use **`get_blog_style_guide`** (includes how to use merge **bodies** from `read_tessell_ui_features` for depth) and save a Markdown draft on disk.  
-4. **Turn it into CMS shape** — build the `blogPost` JSON (Portable Text body, fields from frontmatter).  
-5. **Publish to Sanity** (optional) — send that document into your dataset (staging by default, usually as a draft).  
-6. **Publish to Hashnode** (optional) — same Markdown file via Hashnode GraphQL (`publish_blog_to_hashnode`); see **Hashnode** below.
+This MCP fixes that. Say *“Generate and publish Tessell blogs from the past 15 days”* and the AI does the entire pipeline automatically.
 
-**→ Full step-by-step + copy-paste prompt:** [BLOG_AGENT_WORKFLOW.md](./BLOG_AGENT_WORKFLOW.md)
+**From GitHub commits to published blog posts in one prompt.**
 
 ---
 
-## What it does (the arc)
+## How It Works
 
-| Phase | Idea |
-|--------|------|
-| **Avoid duplicates** | “What did we already blog?” → fetch published posts from Sanity (same query as the site). |
-| **Discover** | “What changed in tessell-ui lately?” → `git log` for the last *N* days with **full commit messages** (or `onelineOnly` for a short list) — not `git diff`. |
-| **Draft** | Turn merge **titles + bodies** into reader-facing posts — **`get_blog_style_guide`** explains using that PR-style text as source material. Save Markdown under **`drafts/`** (`save_blog_draft`). |
-| **Convert** | Markdown → Portable Text `blogPost` + Studio-friendly strings. |
-| **Publish** | Optional `createOrReplace` into Sanity (**staging** by default, **draft** by default). Optional second hop to **Hashnode** with the same `.md`. |
+The pipeline runs in four phases. Each phase calls specific MCP tools in order:
 
----
+### Phase 1 · Learn the Voice
 
-## Setup
+Before writing anything, the AI learns how Tessell blogs look and sound.
 
-1. **Build:** `npm install` then `npm run build`
-2. **Env:** copy `.env.example` → `.env` and set at least `SANITY_PROJECT_ID` (and usually `SANITY_DATASET`, `SANITY_TOKEN` for GROQ reads + publishes). The **`markdown_to_sanity_blog`** tool **fetches the latest** `blogCategory` / `blogTag` rows from Sanity on every conversion and matches your frontmatter — you do **not** need `TESSELL_DEFAULT_BLOG_CATEGORY_REF` / `TESSELL_DEFAULT_BLOG_TAG_REFS` for normal use. Use **`get_blog_categories_and_tags`** to copy exact **names** (or `_id`s) into YAML.
-3. **Cursor / MCP:** point your MCP config at `node /path/to/tessell-blog-agent-mcp/dist/index.js` (or your wrapper).
+| Tool | What it does |
+| --- | --- |
+| `get_blog_style_guide` | Style guide built by analyzing tessell.com/blog — tone, structure, anti-patterns |
+| `get_published_blog_samples` | Fetches full content of recent posts so the AI can match writing quality |
+| `get_published_blogs` | Fetches post titles to avoid writing duplicate topics |
+| `get_blog_categories_and_tags` | Fetches live taxonomy from Sanity for correct frontmatter values |
+| `get_hashnode_style_guide` | Hashnode-specific tone guide based on platform conventions |
 
----
+### Phase 2 · Read What Shipped
 
-## Tools (quick reference)
+The AI reads commit messages (PR descriptions) from the past N days — not diffs, not file lists, just the PR title + body that explains *what* was built and *why*.
 
-### `read_tessell_ui_features`
+| Tool | When it’s used |
+| --- | --- |
+| `read_tessell_github_product_changelog` | **Primary** — used when `TESSELL_GITHUB_REPOS` is set in `.env` |
+| `read_tessell_ui_features` | **Fallback** — reads a local tessell-ui clone on disk |
 
-**Input:** `repoPath` (absolute path to your local tessell-ui clone), optional `daysBack` (default **15**), optional **`onelineOnly`**, optional **`revisionDetails`** (default **false** — add commit SHAs only if you need them), optional **`maxCommits`** (default **350**, cap 5000 — output size cap, not “lines of code changed”).  
-**Does:** runs **`git log`** for the date window (no merge commits). **Default output** is **subject + message body** per merge/squash commit — the closest you can get to “PR title + PR description” **from git alone** (squash bodies usually copy the PR text). It does **not** show diffs, files, or patches. Set **`onelineOnly: true`** for titles only (no markdown header in that mode). Use GitHub’s PR page if the squash body left out reviewer context.  
-**Why:** blog copy should follow product intent in the PR prose, not enumerate file changes. Pair with **`get_blog_style_guide`** so drafts intentionally mine **message bodies** for behaviors and scope, then translate into Tessell voice.
+> If neither is configured, the pipeline stops with a clear error.
 
-### `read_tessell_github_product_changelog`
+### Phase 3 · Decide & Draft
 
-**Input:** optional **`repoUrls`** (comma-separated GitHub URLs — if omitted, uses **`TESSELL_GITHUB_REPOS`** from `.env`), same **`daysBack`**, **`onelineOnly`**, **`revisionDetails`**, **`maxCommits`** as above, plus optional **`maxRepos`** (after dedupe; default **20**, env **`TESSELL_GITHUB_MAX_REPOS`**, cap **100**).  
-**Does:** for each repo URL, **shallow-clones or updates** under **`<tessell-blog-agent-mcp>/.data/git-cache`** (or **`TESSELL_GIT_CACHE_DIR`**), then runs the **same** `git log` as `read_tessell_ui_features`. **`GITHUB_TOKEN`** (optional) is sent only as **`git -c http.extraHeader=Authorization: Basic …`** for clone/fetch — **not** embedded in `git remote` URLs. Returns **one markdown** with a `## Repository: org/repo` section per repo; one repo failing does not stop the others.  
-**Why:** someone can clone **only** this MCP repo, list product GitHub URLs in `.env`, and still get PR-style changelog text for drafting. **Cross-repo “related topics”** are for the model to infer from sectioned output — not auto-clustered inside the MCP.  
-**Coexists with:** `read_tessell_ui_features` when you keep a hot local UI clone and only want GitHub mode for other repos.
+The AI decides what deserves a post, writes it, and saves it locally as a draft.
 
-### `get_published_blogs`
+| Decision | When |
+| --- | --- |
+| **Standalone deep-dive** | A major new capability or cross-cloud milestone |
+| **Combined narrative** | 2–3 related changes that tell one story |
+| **Platform Roundup** | Everything else worth mentioning but not a full post |
+| **Skip** | Internal changes, test additions, CI/CD — nothing user-facing |
 
-**Input:** none.  
-**Does:** loads `.env` / `.env.local` from this MCP repo, then **`@sanity/client.fetch(BLOG_POSTS_QUERY)`** — the **published** blog list your site would show, so you can compare before writing.  
-**Why:** answers “do we already have a post on this?” before you draft.
+Tool used: **`save_blog_draft`** — saves each post as a `.md` file with full frontmatter (title, slug, SEO summary, category, tags) under `drafts/`.
 
-### `get_blog_categories_and_tags`
+### Phase 4 · Convert & Publish
 
-**Input:** none.  
-**Does:** two GROQ queries — all **`blogCategory`** and **`blogTag`** docs that are not archived and not draft, returning **`_id`**, **`name`**, **`slug`** for each. Same client/env as **`get_published_blogs`**.  
-**Why:** refresh before drafting so YAML uses exact **`name`** strings (or **`slug`**) that exist today. **`markdown_to_sanity_blog`** also runs the same GROQ queries internally each time so references stay aligned with the dataset.
+For each draft, the AI publishes to Sanity and then Hashnode — both as drafts by default.
 
-### `get_blog_image_asset_examples`
+| Tool | What it does |
+| --- | --- |
+| `markdown_to_sanity_blog` | Converts `.md` → Sanity Portable Text JSON |
+| `publish_blog_to_sanity` (dry run) | Validates slug, categories, tags — no write |
+| `publish_blog_to_sanity` (live) | Publishes to Sanity as draft; auto-generates a card image |
+| `publish_blog_to_hashnode` | Sends to Hashnode as draft (or live with `mode: publish`) |
 
-**Input:** none.  
-**Does:** recent **`blogPost`** rows that already have **`thumbnailImage`**, returning **`thumbnailAssetRef`** and **`mainAssetRef`** (Sanity **image asset** `_ref` strings you can reuse).  
-**Why:** the Next.js blog **grid** uses **`thumbnailImage`**; the **article hero** uses **`mainImage`**. Without them you get gray placeholders. Paste refs into frontmatter **`thumbnailImageAssetRef`** / **`mainImageAssetRef`**, or set **`TESSELL_DEFAULT_*`** in `.env`, or upload new files in Studio.
-
-### `save_blog_draft`
-
-**Input:** `title`, `markdownContent`, optional `draftsFolderPath`.  
-**Does:** slugifies the title and writes `something.md`. **Default folder:** `<tessell-blog-agent-mcp>/drafts` (keeps generated drafts next to this tool). Override with **`draftsFolderPath`**, or set **`TESSELL_BLOG_DRAFTS_DIR`** in `.env`.  
-**Why:** one-shot file drop; you can also create files by hand with a dated name (see [BLOG_AGENT_WORKFLOW.md](./BLOG_AGENT_WORKFLOW.md)).
-
-### `markdown_to_sanity_blog`
-
-**Input:** `markdownFilePath` **or** raw `markdown` string.  
-**Does:** `gray-matter` for frontmatter; body → Portable Text via `marked`; builds `apiReady.document` (`blogPost`) + `studioFriendly` flat fields.  
-**Category & tags:** Each run **fetches the latest** `blogCategory` / `blogTag` documents from Sanity and matches frontmatter. Use **`category`** (string) + **`tags`** (YAML list of strings), and/or **`blogCategoryRef`** / **`blogTagsRefs`**. Each value can be a document **`_id`** or a label matched against **`name`** / **`slug`** (same dataset refresh as **`get_blog_categories_and_tags`** — **always** verify spelling against that tool). **`TESSELL_DEFAULT_BLOG_*`** env vars are **not** used for taxonomy. Optional **`sanityDocumentId`** republishes **in place**.  
-**Images:** optional **`thumbnailImageAssetRef`** / **`mainImageAssetRef`** (Sanity **image asset** `_ref`s). Listing cards need **`thumbnailImage`**; article hero uses **`mainImage`**. Use MCP **`get_blog_image_asset_examples`** to copy refs from posts that already have art, or env **`TESSELL_DEFAULT_THUMBNAIL_IMAGE_ASSET_REF`** / **`TESSELL_DEFAULT_MAIN_IMAGE_ASSET_REF`**. If only one ref is set, it is reused for both fields.  
-**Authors:** still added in Studio unless you extend the tool.  
-**Draft default:** if frontmatter omits `draft`, the document gets **`draft: true`** so API pushes don’t accidentally look “live.”
-
-### `publish_blog_to_sanity`
-
-**Input:** exactly one of `markdownFilePath`, `sanityPayloadsJsonPath` (saved JSON from the step above), or `documentJson`. Optional `dryRun`, optional `dataset` override, optional **`generateCardImageFromContent`**.  
-**Does:** resolves a `blogPost` document from Markdown (runs the same **live taxonomy resolution** as `markdown_to_sanity_blog`) or from saved JSON, optionally **generates a PNG** from **title + postSummary** (simple “Tessell” gradient card), **uploads** it as a Sanity image asset, and sets **thumbnail + main** when no thumbnail exists, then **`mutate([{ createOrReplace }])`**. This is **not** AI artwork—just readable typography for cards until design uploads real art in Studio.  
-**Dry-run:** no token required; validates resolution and reports target project/dataset/slug. **Real write** needs a **write-capable** `SANITY_TOKEN` (with permission to upload assets).  
-**Dataset:** defaults to `SANITY_DATASET` or **`staging`**.
-
-### `resolve_hashnode_publication`
-
-**Input:** optional `host` (e.g. `tessell.hashnode.dev`), or set **`HASHNODE_PUBLICATION_HOST`** in `.env`.  
-**Does:** public GraphQL query to `https://gql.hashnode.com` — returns **`publication.id`** so you can set **`HASHNODE_PUBLICATION_ID`**. No PAT required.  
-**Why:** one-time setup before `publish_blog_to_hashnode`.
-
-### `publish_blog_to_hashnode`
-
-**Input:** **`markdownFilePath`** (absolute `.md`, same file as Sanity), optional **`mode`**: `draft` (default — `createDraft`, review in Hashnode) or `publish` (`publishPost`, live). When **`mode` is omitted**, use env **`HASHNODE_PUBLISH_MODE`** (`draft` or `publish`); if unset, behavior is **draft**. Optional **`dryRun`**, optional **`publicationHost`** if `HASHNODE_PUBLICATION_ID` is unset.  
-**Env:** **`HASHNODE_ACCESS_TOKEN`** — Personal Access Token from [Hashnode → Settings → Developer](https://hashnode.com/settings/developer) (send as raw `Authorization` header value, not `Bearer`). **`HASHNODE_PUBLICATION_ID`** or **`HASHNODE_PUBLICATION_HOST`** for the publication. Optional **`HASHNODE_PUBLISH_MODE`** — `draft` (default) or `publish` when the tool call omits **`mode`**. Optional **`TESSELL_BLOG_CANONICAL_BASE_URL`** — when frontmatter has no `canonicalUrl`, syndication uses `` `${BASE}/${slug}` `` as `originalArticleURL` on Hashnode.  
-**Does:** parses frontmatter (`title`/`name`, `postSummary`→subtitle, `slug`, `tags` → Hashnode tag objects, body → `contentMarkdown`), then **`createDraft`** (default) or **`publishPost`** when **`mode`** / **`HASHNODE_PUBLISH_MODE`** is `publish`. See [Hashnode API docs](https://apidocs.hashnode.com/).  
-**Dry-run:** validates Markdown; if token or publication is missing, returns **`dryRun: true`** with a reminder (no network call unless resolving host → id).
+A human reviews everything in Sanity Studio before it goes live on tessell.com.
 
 ---
 
-## Mental model
+## Quick Start
 
-- **MCP does not host tessell-ui**—it shells out **git** where you point it.
-- **Sanity** uses `SANITY_PROJECT_ID`, `SANITY_DATASET`, and `SANITY_TOKEN` from this repo’s `.env` (or exported in the MCP process). Keep datasets straight (**staging** vs **prod**).
-- **One document per successful publish** from Markdown: each conversion can mint a new `_id`; re-posting the same `.md` without pinning an id creates **another** document—edit in Studio or reuse a fixed `_id` in the payload if you need updates.
-- **Hashnode** uses the same Markdown source; each **`publishPost`** creates a new live post. Re-running without dedupe on Hashnode’s side can duplicate—**default** is **`createDraft`**; use **`mode: publish`** (or env) only when you want an immediate public post on Hashnode.
+```bash
+git clone https://github.com/AsutoshTessell/tessell-blog-agent-mcp
+cd tessell-blog-agent-mcp
+npm install && npm run build
+
+```
 
 ---
 
-## License / ownership
+## Environment Setup
+
+| Variable | How to get it |
+| --- | --- |
+| `SANITY_PROJECT_ID` | Fixed: `krotrzct` |
+| `SANITY_DATASET` | Fixed: `staging` |
+| `SANITY_TOKEN` | [sanity.io/manage](https://sanity.io/manage) → Tessell project → **API → Tokens → Add API token** → Editor role |
+| `GITHUB_TOKEN` | [github.com/settings/tokens](https://github.com/settings/tokens) → Tokens (classic) → Generate new token → tick `repo` scope |
+| `TESSELL_GITHUB_REPOS` | Comma-separated list of Tessell GitHub repo URLs |
+| `HASHNODE_ACCESS_TOKEN` | [hashnode.com](https://hashnode.com) → Account Settings → **Developer → Personal Access Tokens** |
+| `HASHNODE_PUBLICATION_HOST` | Your Hashnode blog URL e.g. `yourname.hashnode.dev` |
+| `HASHNODE_PUBLICATION_ID` | Run the GraphQL query below at [gql.hashnode.com](https://gql.hashnode.com) |
+| `TESSELL_BLOG_CANONICAL_BASE_URL` | **Optional.** Only set if the same post lives on both tessell.com **and** Hashnode. Value: `https://www.tessell.com/blog` |
+
+**Get your `HASHNODE_PUBLICATION_ID`** — go to [gql.hashnode.com](https://gql.hashnode.com) and run:
+
+```graphql
+query {
+  publication(host: "yourname.hashnode.dev") {
+    id
+    title
+  }
+}
+```
+
+Copy the `id` from the response — that’s your `HASHNODE_PUBLICATION_ID`.
+
+> Never commit `.env` to Git. It is already in `.gitignore`.
+
+---
+
+## Add to Your AI Assistant
+
+The MCP runs as a local subprocess — your AI assistant spawns it on demand. Point the config at `dist/index.js` in the cloned repo.
+
+**Augment Code** — `Cmd+Shift+P` → Preferences: Open User Settings (JSON) → add:
+
+```json
+"augment.advanced": {
+  "mcpServers": [
+    {
+      "name": "tessell-blog-agent",
+      "command": "node",
+      "args": ["/your/local/path/to/tessell-blog-agent-mcp/dist/index.js"]
+    }
+  ]
+}
+```
+
+**Cursor** — create or edit `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "tessell-blog-agent": {
+      "command": "node",
+      "args": ["/your/local/path/to/tessell-blog-agent-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+> Replace `/your/local/path/to/tessell-blog-agent-mcp` with the absolute path where you cloned the repo (e.g. `/Users/yourname/projects/tessell-blog-agent-mcp`). Restart your AI assistant after saving.
+
+---
+
+## Example Prompts
+
+```
+Generate and publish Tessell blogs from the past 15 days.
+```
+
+---
+
+## Key Behaviors
+
+- **Draft by default** — every post is `draft: true` in both Sanity and Hashnode until a human approves it
+- **Card images auto-generated** — a branded PNG is created from the post title and summary on every Sanity publish
+- **Taxonomy fetched live** — categories and tags are pulled from Sanity on each run; no hardcoded values
+- **Hashnode is optional** — if Hashnode credentials are missing, Sanity publish still completes normally
+- **Canonical URL** — only set `TESSELL_BLOG_CANONICAL_BASE_URL` if the same post exists on both tessell.com and Hashnode; skip it if Hashnode is your only blog
+- **No duplicate publishes** — pin `sanityDocumentId` in frontmatter if you want to update an existing post instead of creating a new one
+
+---
+
+## License / Ownership
 
 Internal Tessell tooling; align usage with your team’s Sanity and repo policies.
