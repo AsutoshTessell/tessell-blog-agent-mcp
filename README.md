@@ -145,6 +145,9 @@ The MCP runs as a local subprocess — your AI assistant spawns it on demand. Po
 ```
 Generate and publish Tessell blogs from the past 15 days.
 ```
+```
+Generate blogs for last month
+```
 
 ---
 
